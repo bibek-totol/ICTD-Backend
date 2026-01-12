@@ -6,7 +6,6 @@ import express, { Request, Response } from "express";
 //   deleteUser,
 // } from "../controllers/user.controller";
 import authorizeMiddleware from "../middlewares/role.m";
-import { request } from "node:http";
 import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
 import { AppError } from "../utils/AppError.util";
 
