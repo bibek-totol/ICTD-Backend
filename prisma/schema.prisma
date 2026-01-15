@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
 
 enum ErrorSeverity {
   LOW
@@ -111,3 +112,22 @@ model ErrorLog {
   @@index([requestId, occurredAt])
 }
 
+
+model labs {
+  division   String? @db.VarChar(255)
+  seat       String? @db.VarChar(255)
+  upazila    String? @db.VarChar(255)
+  id         Int     @id @default(autoincrement())
+  institute  String? @db.VarChar(255)
+  lab_type   String? @db.VarChar(255)
+  head       String? @db.VarChar(255)
+  mobile     Int?
+  alt_mobile Int?
+  email      String? @db.VarChar(255)
+  lat        String?
+  long       String?
+
+  @@index([division], map: "idx_labs_division")
+  @@index([lab_type], map: "idx_labs_lab_type")
+  @@index([upazila], map: "idx_labs_upazila")
+}

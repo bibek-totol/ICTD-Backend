@@ -1,0 +1,178 @@
+import { Request, Response } from "express";
+import { prisma } from "../configs/prisma.config";
+import { AppError } from "../utils/AppError.util";
+import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
+
+
+const mapLabToFrontend = (lab: any) => ({
+  id: lab.id,
+  institute: lab.institute,
+  division: lab.division,
+  upazila: lab.upazila,
+  seat: lab.seat,
+  head: lab.head,
+  mobile: lab.mobile,
+  altMobile: lab.alt_mobile,
+  email: lab.email,
+  labType: lab.lab_type,
+  lat: lab.lat,
+  long: lab.long,
+});
+
+
+export const getLabs = async (req: Request, res: Response) => {
+  try {
+    const { division, upazila, labType, search } = req.query;
+
+    
+    const whereClause: any = {};
+
+    if (division && division !== "All") {
+      whereClause.division = division as string;
+    }
+
+    if (upazila && upazila !== "All") {
+      whereClause.upazila = upazila as string;
+    }
+
+    if (labType && labType !== "All") {
+      whereClause.lab_type = labType as string;
+    }
+
+    
+    if (search) {
+      whereClause.OR = [
+        { institute: { contains: search as string, mode: "insensitive" } },
+        { head: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
+        { division: { contains: search as string, mode: "insensitive" } },
+      ];
+    }
+
+    const labs = await prisma.labs.findMany({
+      where: whereClause,
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    
+
+    
+    const mappedLabs = labs.map(mapLabToFrontend);
+
+    return res.status(200).json({
+      success: true,
+      message: "Labs retrieved successfully",
+      data: mappedLabs,
+      count: mappedLabs.length,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "getLabs",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
+
+export const getLabById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const lab = await prisma.labs.findUnique({
+      where: {
+        id: parseInt(id as string),
+      },
+    });
+
+    if (!lab) {
+      return res.status(404).json({
+        success: false,
+        message: "Lab not found",
+      });
+    }
+
+    
+    const mappedLab = mapLabToFrontend(lab);
+
+    return res.status(200).json({
+      success: true,
+      message: "Lab retrieved successfully",
+      data: mappedLab,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "getLabById",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
+
+
+
+export const getFilterOptions = async (req: Request, res: Response) => {
+  try {
+    const divisions = await prisma.labs.findMany({
+      distinct: ["division"],
+      select: {
+        division: true,
+      },
+      where: {
+        division: {
+          not: null,
+        },
+      },
+      orderBy: {
+        division: "asc",
+      },
+    });
+
+    const upazilas = await prisma.labs.findMany({
+      distinct: ["upazila"],
+      select: {
+        upazila: true,
+      },
+      where: {
+        upazila: {
+          not: null,
+        },
+      },
+      orderBy: {
+        upazila: "asc",
+      },
+    });
+
+    const labTypes = await prisma.labs.findMany({
+      distinct: ["lab_type"],
+      select: {
+        lab_type: true,
+      },
+      where: {
+        lab_type: {
+          not: null,
+        },
+      },
+      orderBy: {
+        lab_type: "asc",
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Filter options retrieved successfully",
+      data: {
+        divisions: divisions.map((d) => d.division).filter(Boolean),
+        upazilas: upazilas.map((u) => u.upazila).filter(Boolean),
+        labTypes: labTypes.map((l) => l.lab_type).filter(Boolean),
+      },
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "getFilterOptions",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
