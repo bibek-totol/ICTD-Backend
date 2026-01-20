@@ -6,8 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
-
 enum ErrorSeverity {
   LOW
   MEDIUM
@@ -39,14 +37,26 @@ enum Role {
   Anonymous
 }
 
+enum PageState {
+  Default
+  SendVerifiedEmailCode
+  VerifiedEmail
+  Registered
+}
+
 model User {
-  id                     Int       @id @default(autoincrement())
+  id                     String    @id @default(uuid()) @db.Uuid @unique
+  userName               String    
   email                  String    @unique
-  password               String
-  phone                  BigInt?   @unique
+  password               String    @default("djhsb%duiw%qhilnu")
+  phoneNumber            String?   @unique
+  imageUrl               String    @default("https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png")
+
+  usersManagementKey     String?   @unique
+  pageState              PageState @default(Default)
 
   isVerified             Boolean   @default(false)
-  role                   Role      
+  role                   Role      @default(LabAdmin)   
 
   verificationCode       String?
   verificationExpiry     DateTime?
@@ -121,9 +131,9 @@ model labs {
   institute  String? @db.VarChar(255)
   lab_type   String? @db.VarChar(255)
   head       String? @db.VarChar(255)
-  mobile     Int?
-  alt_mobile Int?
-  email      String? @db.VarChar(255)
+  mobile     Int? //
+  alt_mobile Int? //
+  email      String? @db.VarChar(255) //
   lat        String?
   long       String?
 

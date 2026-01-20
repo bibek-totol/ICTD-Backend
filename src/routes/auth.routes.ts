@@ -1,10 +1,14 @@
-// import express, { Request, Response } from "express";
-// import * as Auth from "../controllers/auth.controller";
+import express, { Request, Response } from "express";
+import * as Auth from "../controllers/auth.controller";
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.post("/signup", Auth.signup);
+router.post("/signup", Auth.signup);
 
-// router.post("/signin", Auth.signin);
+router.post("/signin", Auth.signin);
 
-// export default router;
+router.post("/verify/email", Auth.verifyEmail);
+
+router.post("/verify/code", Auth.verifyEmailCode);
+
+export default router;

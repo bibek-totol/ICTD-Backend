@@ -5,9 +5,11 @@ import { connectDatabase } from "./configs/prisma.config";
 // import AuthRouter from "./routes/auth.routes";
 import UserRouter from "./routes/user.routes";
 import LabRouter from "./routes/lab.routes";
+import AuthRouter from "./routes/auth.routes";
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from "./middlewares/logger.m";
 import { errorHandler } from "./middlewares/errorHandler.m";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -17,7 +19,7 @@ const clientPort2 = 5174;
 const clientPort3 = 5175;
 
 app.set("etag", false);
-app.set("trust proxy", true); 
+app.set("trust proxy", true);
 
 app.use(
   cors({
@@ -29,21 +31,21 @@ app.use(
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(requestLogger);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: true, message: "Server is running" });
 });
 
-
 // app.use("/api/v1/auth", AuthRouter);
 // app.use(authenticateMiddleware);
+app.use("/api/v1/auth", AuthRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/labs", LabRouter);
 

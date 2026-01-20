@@ -1,12 +1,16 @@
 import { Request, Response } from "express";
 import jwt, { SignOptions } from "jsonwebtoken";
 import checkUserAgent from "./checkUserAgent.util";
-
+import { ReqTypeEnum } from "../interfaces_and_types/ReqType.enum";
+import {
+  assignCookieOptions,
+  deleteCookieOptions,
+} from "../configs/options/cookies.option";
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export function generateJwtToken(
   payload: object,
-  options: SignOptions = {}
+  options: SignOptions = {},
 ): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -22,30 +26,72 @@ export function generateJwtToken(
 }
 
 export function assignJwtToken(req: Request, res: Response, payload: object) {
-  const isBrowser = checkUserAgent(req);
+  try {
+    const { ReqType } = req.body;
 
-  const token = generateJwtToken(payload);
+    const isBrowser = checkUserAgent(req);
 
-  if (isBrowser) {
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    // check ReqType === "mobileApps" || !isBrowser ---> then it is mobileApplication
+    // else ---> it is webApplication
+
+    const token = generateJwtToken(payload);
+
+    if (ReqType === ReqTypeEnum.MobileApp && !isBrowser) {
+      // return bearer token for mobile, postman, APIs
+      return {
+        success: true,
+        type: "Bearer",
+        token,
+        message: "Token assigned via bearer",
+      };
+    }
+
+    // when it is web
+    res.cookie("token", token, assignCookieOptions);
 
     return {
+      success: true,
       type: "cookie",
       token: null, // browser doesn't need returned token
       message: "Token assigned via cookies",
     };
+  } catch (error: any) {
+    return {
+      success: false,
+      type: null,
+      token: null, // browser doesn't need returned token
+      message: error.message,
+      error,
+    };
+  }
+}
+
+export function deleteJwtToken(req: Request, res: Response, payload: object) {
+  const { ReqType } = req.body;
+
+  const isBrowser = checkUserAgent(req);
+
+  // check ReqType === "mobileApps" || !isBrowser ---> then it is mobileApplication
+  // else ---> it is webApplication
+
+  const token = generateJwtToken(payload);
+
+  if (ReqType === ReqTypeEnum.MobileApp && !isBrowser) {
+    // return bearer token for mobile, postman, APIs
+    return {
+      type: "Bearer",
+      token,
+      message: "Token assigned via bearer",
+    };
   }
 
-  // return bearer token for mobile, postman, APIs
+  // when it is web
+  res.cookie("token", token, assignCookieOptions);
+
   return {
-    type: "Bearer",
-    token,
-    message: "Token assigned via bearer",
+    type: "cookie",
+    token: null, // browser doesn't need returned token
+    message: "Token assigned via cookies",
   };
 }
 
