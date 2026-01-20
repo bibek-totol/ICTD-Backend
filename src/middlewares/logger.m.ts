@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from "express";
+import AppRequest from "../interfaces_and_types/AppRequest.interface";
 import { randomUUID } from "crypto";
 import { appLogger } from "../utils/logger.util";
-
+import { Role } from "@prisma/client";
 const TIME_ZONE = "Asia/Dhaka";
 
 export const requestLogger = (
-  req: Request,
+  req: AppRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (req.path === "/favicon.ico") {
     return next();
@@ -45,6 +46,12 @@ export const requestLogger = (
       timezone: TIME_ZONE,
     });
   });
+
+  req.user = {
+    role: Role.Anonymous,
+    userId: "",
+    requestId: requestId,
+  };
 
   next();
 };

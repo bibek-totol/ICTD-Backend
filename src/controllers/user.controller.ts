@@ -1,5 +1,6 @@
-// import express, { Request, Response } from "express";
-// import bcrypt from "bcryptjs";
+import express, { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
 // import { pool } from "../config/db";
 // import { AuthRequest } from "../middlewares/auth.m";
 
