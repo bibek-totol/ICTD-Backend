@@ -15,6 +15,7 @@ import { prisma } from "../configs/prisma.config";
   error: unknown;         // original error (optional)
 */
 
+// Level3 Middleware
 export const AuthorizationMiddleware = async (
   req: AppRequest,
   res: Response,
@@ -81,7 +82,7 @@ export const AuthorizationMiddleware = async (
   }
 };
 
-// Level3 Middleware
+// Level4 Middlewares
 export const SuperAdminAuthorizationMiddleware = (
   req: AppRequest,
   res: Response,
@@ -236,5 +237,3 @@ export const LabAdminAuthorizationMiddleware = async (
     throw new AppError(payload);
   }
 };
-
-// Level2 Middleware
