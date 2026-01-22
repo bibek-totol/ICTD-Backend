@@ -1,12 +1,12 @@
-import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import config from "./env.config"
+import config from "./env.config";
 
-const connectionString = `${config.database_url}`
+const connectionString = `${config.database_url}`;
 
-const adapter = new PrismaPg({ connectionString })
+const adapter = new PrismaPg({ connectionString });
 
-export const prisma = new PrismaClient({ adapter })
+export const prisma = new PrismaClient({ adapter });
 
 export async function connectDatabase() {
   try {
@@ -17,4 +17,3 @@ export async function connectDatabase() {
     process.exit(1);
   }
 }
-
