@@ -13,6 +13,8 @@ import { prisma } from "../configs/prisma.config";
 import { Role } from "@prisma/client";
 import { isEmail, isValidRole } from "../utils/checkUserInput.utils";
 import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
+import { uploadToDBFromExcelUserSheet } from "../scripts/importUsersFromExcel";
+import { LabTypes } from "@prisma/client";
 
 const router = express.Router();
 
@@ -24,7 +26,7 @@ const router = express.Router();
 
 // router.delete("/:userId", authorizeMiddleware, deleteUser); // admin only
 
-router.use(AuthorizationMiddleware);
+// router.use(AuthorizationMiddleware);
 
 router.get("/", (req: Request, res: Response) => {
   try {
@@ -59,12 +61,12 @@ router.post("/add/users", async (req: Request, res: Response) => {
       });
     }
 
-    if (!key) {
-      return res.status(400).json({
-        success: false,
-        message: "key field is missing",
-      });
-    }
+    // if (!key) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "key field is missing",
+    //   });
+    // }
 
     // implement the middleware
     // catch the role and id from middleware
@@ -75,6 +77,7 @@ router.post("/add/users", async (req: Request, res: Response) => {
       "email",
       "password",
       "phoneNumber",
+      "altPhoneNumber",
       "imageUrl",
       "role",
     ];
@@ -84,12 +87,22 @@ router.post("/add/users", async (req: Request, res: Response) => {
 
       let userKeys = Object.keys(user);
 
-      if (userKeys.length > 8) {
-        return res.status(400).json({
-          success: false,
-          message: "limit exceded for user fields",
-        });
-      }
+      user.userName = user?.head;
+      delete user.head;
+      user.phoneNumber = user?.mobile;
+      delete user.mobile;
+      user.altPhoneNumber = user?.alt_mobile;
+      delete user.alt_mobile;
+
+      user.email = user?.email;
+      user.role = user?.role;
+
+      // if (userKeys.length > 8) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "limit exceded for user fields",
+      //   });
+      // }
 
       let userKeysVerifySet = new Set(userKeys);
 
@@ -100,12 +113,12 @@ router.post("/add/users", async (req: Request, res: Response) => {
       }
       console.log("remains size of userKeysVerifySet", userKeysVerifySet.size);
 
-      if (userKeysVerifySet.size !== 0) {
-        return res.status(400).json({
-          success: false,
-          message: "invalid add user total fields",
-        });
-      }
+      // if (userKeysVerifySet.size !== 0) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "invalid add user total fields",
+      //   });
+      // }
 
       if (user?.userName) {
         if (typeof user.userName !== "string") {
@@ -200,20 +213,44 @@ router.post("/add/users", async (req: Request, res: Response) => {
         user.role = checkRole;
       }
 
+      // "userName",
+      // "email",
+      // "password",
+      // "phoneNumber",
+      // "altPhoneNumber",
+      // "imageUrl",
+      // "role",
+
       let insertData: {
-        userName: string;
+        userName?: string;
         email: string;
         password?: string;
-        phoneNumber: string;
+        phoneNumber?: string;
+        altPhoneNumber?: string;
+        imageUrl?: string;
         role?: Role;
       } = {
-        userName: user.userName,
         email: user.email,
-        phoneNumber: user.phoneNumber,
       };
+
+      if (user?.userName) {
+        insertData.userName = user.userName;
+      }
 
       if (user?.password) {
         insertData.password = user.password;
+      }
+
+      if (user?.phoneNumber) {
+        insertData.phoneNumber = user.phoneNumber;
+      }
+
+      if (user?.altPhoneNumber) {
+        insertData.altPhoneNumber = user.altPhoneNumber;
+      }
+
+      if (user?.imageUrl) {
+        insertData.imageUrl = user.imageUrl;
       }
 
       if (user?.role) {
@@ -232,6 +269,101 @@ router.post("/add/users", async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "welcome user hello",
+      data: "data inserted successfully",
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "Any",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+});
+
+router.post("/add/labs", async (req: Request, res: Response) => {
+  try {
+    if (!config.add_user_support) {
+      return res.status(400).json({
+        success: false,
+        message: "Add Labs Support is closed!",
+      });
+    }
+
+    const { labs } = req.body;
+
+    if (!Array.isArray(labs)) {
+      return res.status(400).json({
+        success: false,
+        message: "labs field must be an array",
+      });
+    }
+
+    for (let lab of labs) {
+      const user = await prisma.user.findUnique({
+        where: {
+          email: lab.email,
+        },
+      });
+
+      if (!user) {
+        continue;
+      }
+
+      let insertData: {
+        division?: string;
+        seat?: string;
+        upazila?: string;
+        institute?: string;
+        lab_type?: LabTypes;
+        userId: string;
+        lat?: string;
+        long?: Role;
+      } = {
+        userId: "",
+      };
+
+      if (!user.id) {
+        break;
+      }
+
+      insertData.userId = user.id;
+
+      if (lab?.division) {
+        insertData.division = lab.division;
+      }
+
+      if (lab?.seat) {
+        insertData.seat = lab.seat;
+      }
+
+      if (lab?.upazila) {
+        insertData.upazila = lab.upazila;
+      }
+
+      if (lab?.institute) {
+        insertData.institute = lab.institute;
+      }
+
+      if (lab?.lab_type) {
+        insertData.lab_type = lab.lab_type;
+      }
+
+      if (lab?.lat) {
+        insertData.lat = lab.lat;
+      }
+
+      if (lab?.long) {
+        insertData.long = lab.long;
+      }
+
+      const createLab = await prisma.labs.create({
+        data: insertData,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "welcome lab hello",
       data: "data inserted successfully",
     });
   } catch (error) {

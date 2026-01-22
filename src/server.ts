@@ -35,8 +35,9 @@ app.use(
 );
 
 app.use(requestLogger);
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.json({ limit: "1000mb" }));
+app.use(express.urlencoded({ limit: "1000mb", extended: true }));
+
 app.use(cookieParser());
 
 app.get("/", (req: Request, res: Response) => {

@@ -45,6 +45,7 @@
     "sql-formatter": "^15.6.12",
     "ua-parser-js": "^2.0.7",
     "uuid": "^13.0.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "xlsx": "^0.18.5"
   }
 }
