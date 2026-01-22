@@ -44,30 +44,6 @@ enum PageState {
   Registered
 }
 
-model User {
-  id                     String    @id @default(uuid()) @db.Uuid @unique
-  userName               String    
-  email                  String    @unique
-  password               String    @default("djhsb%duiw%qhilnu")
-  phoneNumber            String?   @unique
-  imageUrl               String    @default("https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png")
-
-  usersManagementKey     String?   @unique
-  pageState              PageState @default(Default)
-
-  isVerified             Boolean   @default(false)
-  role                   Role      @default(LabAdmin)   
-
-  verificationCode       String?
-  verificationExpiry     DateTime?
-
-  resetPasswordCode      String?
-  resetPasswordExpires   DateTime?
-
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-}
-
 model VisitorLog {
   id            String    @id @default(uuid())
   level         LogLevel
@@ -122,22 +98,55 @@ model ErrorLog {
   @@index([requestId, occurredAt])
 }
 
+model User {
+  id                     String    @id @default(uuid()) @db.Uuid @unique
+  userName               String?              // taken
+  email                  String    @unique   // taken
+  password               String    @default("govt@doict.pass")
+  phoneNumber            String?   @unique  // taken
+  altPhoneNumber         String?   @unique  // taken?
+  imageUrl               String    @default("https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png")
 
+  usersManagementKey     String?   @unique
+  pageState              PageState @default(Default)
+
+  isVerified             Boolean   @default(false)
+  role                   Role?      @default(LabAdmin) //taken
+
+  verificationCode       String?
+  verificationExpiry     DateTime?
+
+  resetPasswordCode      String?
+  resetPasswordExpires   DateTime?
+
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  labs                   labs[]
+}
+
+
+enum LabTypes {
+  sof
+  ictdl_sof
+  srdl_sof
+}
 model labs {
-  division   String? @db.VarChar(255)
-  seat       String? @db.VarChar(255)
-  upazila    String? @db.VarChar(255)
-  id         Int     @id @default(autoincrement())
-  institute  String? @db.VarChar(255)
-  lab_type   String? @db.VarChar(255)
-  head       String? @db.VarChar(255)
-  mobile     Int? //
-  alt_mobile Int? //
-  email      String? @db.VarChar(255) //
+  id         Int        @id @default(autoincrement())
+  division   String?    @db.VarChar(255)
+  seat       String?    @db.VarChar(255)
+  upazila    String?    @db.VarChar(255)
+  institute  String?    @db.VarChar(255)
+  lab_type   LabTypes?
+
+  userId     String     @db.Uuid
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   lat        String?
   long       String?
 
   @@index([division], map: "idx_labs_division")
   @@index([lab_type], map: "idx_labs_lab_type")
   @@index([upazila], map: "idx_labs_upazila")
+  @@index([userId])
 }

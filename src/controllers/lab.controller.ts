@@ -2,7 +2,12 @@ import { Request, Response } from "express";
 import { prisma } from "../configs/prisma.config";
 import { AppError } from "../utils/AppError.util";
 import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
-
+import { LabTypes } from "@prisma/client";
+import {
+  OutputStructure,
+  NestedUser,
+  ShapeData,
+} from "../interfaces_and_types/labs.interface";
 
 const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
@@ -19,12 +24,10 @@ const mapLabToFrontend = (lab: any) => ({
   long: lab.long,
 });
 
-
 export const getLabs = async (req: Request, res: Response) => {
   try {
     const { division, upazila, labType, search } = req.query;
 
-    
     const whereClause: any = {};
 
     if (division && division !== "All") {
@@ -39,7 +42,6 @@ export const getLabs = async (req: Request, res: Response) => {
       whereClause.lab_type = labType as string;
     }
 
-    
     if (search) {
       whereClause.OR = [
         { institute: { contains: search as string, mode: "insensitive" } },
@@ -56,9 +58,6 @@ export const getLabs = async (req: Request, res: Response) => {
       },
     });
 
-    
-
-    
     const mappedLabs = labs.map(mapLabToFrontend);
 
     return res.status(200).json({
@@ -93,7 +92,6 @@ export const getLabById = async (req: Request, res: Response) => {
       });
     }
 
-    
     const mappedLab = mapLabToFrontend(lab);
 
     return res.status(200).json({
@@ -109,8 +107,6 @@ export const getLabById = async (req: Request, res: Response) => {
     throw new AppError(errorObj);
   }
 };
-
-
 
 export const getFilterOptions = async (req: Request, res: Response) => {
   try {
@@ -171,6 +167,51 @@ export const getFilterOptions = async (req: Request, res: Response) => {
   } catch (error) {
     const errorObj: AppErrorPayload = {
       fnc: "getFilterOptions",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
+
+export const newGetLabs = async (req: Request, res: Response) => {
+  try {
+    const labs = await prisma.labs.findMany({
+      select: {
+        id: true,
+        division: true,
+        seat: true,
+        upazila: true,
+        institute: true,
+        lab_type: true,
+        lat: true,
+        long: true,
+
+        user: {
+          select: {
+            userName: true,
+            email: true,
+            phoneNumber: true,
+            altPhoneNumber: true,
+          },
+        },
+      },
+    });
+
+    const outputData = [];
+
+    for (let lab of labs) {
+      outputData.push(new ShapeData(lab));
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Labs retrieved successfully",
+      data: outputData,
+      count: outputData.length,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "newGetLabs",
       error,
     };
     throw new AppError(errorObj);
