@@ -7,5 +7,5 @@ import { Role } from "@prisma/client";
 
 export interface CookiesAuthPayLoad {
   id: String;
-  role: Role;
+  role?: Role;
 }

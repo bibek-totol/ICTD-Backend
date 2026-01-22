@@ -7,26 +7,23 @@ const isProduction = process.env.NODE_ENV === "production";
 
 export const appLogger = winston.createLogger({
   level: isProduction ? "info" : "debug",
-  format: combine(
-    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-    json()
-  ),
+  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), json()),
   transports: [
     // 🔹 Visitor logs (file)
-    new winston.transports.File({
-      filename: "logs/visitor.log",
-    }),
+    // new winston.transports.File({
+    //   filename: "logs/visitor.log",
+    // }),
 
     // 🔹 Error logs
-    new winston.transports.File({
-      filename: "logs/error.log",
-      level: "error",
-    }),
+    // new winston.transports.File({
+    //   filename: "logs/error.log",
+    //   level: "error",
+    // }),
 
-    // 🔹 App logs
-    new winston.transports.File({
-      filename: "logs/app.log",
-    }),
+    // // 🔹 App logs
+    // new winston.transports.File({
+    //   filename: "logs/app.log",
+    // }),
 
     // 🔹 Prisma VisitorLog (DB)
     new PrismaVisitorTransport(),
@@ -42,8 +39,8 @@ if (!isProduction) {
           return `[${timestamp}] ${level}: ${message} ${
             Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
           }`;
-        })
+        }),
       ),
-    })
+    }),
   );
 }
