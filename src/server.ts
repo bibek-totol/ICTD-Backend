@@ -6,6 +6,7 @@ import { connectDatabase } from "./configs/prisma.config";
 import UserRouter from "./routes/user.routes";
 import LabRouter from "./routes/lab.routes";
 import AuthRouter from "./routes/auth.routes";
+import LabReportRouter from "./routes/labReport.routes";
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from "./middlewares/logger.m";
 import { errorHandler } from "./middlewares/errorHandler.m";
@@ -49,6 +50,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/v1/auth", AuthRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/labs", LabRouter);
+app.use("/api/v1/lab-reports", LabReportRouter);
 
 app.use(errorHandler);
 

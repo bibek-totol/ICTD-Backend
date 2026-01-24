@@ -149,4 +149,29 @@ model labs {
   @@index([lab_type], map: "idx_labs_lab_type")
   @@index([upazila], map: "idx_labs_upazila")
   @@index([userId])
+
+  reports    LabReport[]
+}
+
+model LabReport {
+  id                String   @id @default(uuid())
+  labId             Int
+  lab               labs     @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  basicRobotics     Int      @default(0)
+  advancedRobotics  Int      @default(0)
+  threeDPrinter     Int      @default(0)
+  vrHeadset         Int      @default(0)
+  networkCamera     Int      @default(0)
+  ups               Int      @default(0)
+
+  isFunctional      String?
+  damageDetails     String?
+  storageConditions String?
+  recommendations   String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([labId])
 }

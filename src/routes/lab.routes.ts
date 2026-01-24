@@ -1,9 +1,9 @@
 import express from "express";
 import {
   newGetLabs,
-  // getLabs,
-  // getFilterOptions,
-  // getLabById,
+  getLabs,
+  getFilterOptions,
+  getLabById,
 } from "../controllers/lab.controller.js";
 
 // import authorizeMiddleware from "../middlewares/role.m";
@@ -11,8 +11,9 @@ import {
 
 const router = express.Router();
 
-router.get("/", newGetLabs);
-// router.get("/filter-options", getFilterOptions);
-// router.get("/:id", getLabById);
+// router.get("/", newGetLabs);
+router.get("/", getLabs);
+router.get("/filter-options", getFilterOptions);
+router.get("/:id", getLabById);
 
 export default router;

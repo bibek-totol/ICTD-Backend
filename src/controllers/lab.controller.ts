@@ -15,10 +15,10 @@ const mapLabToFrontend = (lab: any) => ({
   division: lab.division,
   upazila: lab.upazila,
   seat: lab.seat,
-  head: lab.head,
-  mobile: lab.mobile,
-  altMobile: lab.alt_mobile,
-  email: lab.email,
+  head: lab.user?.userName ?? lab.head,
+  mobile: lab.user?.phoneNumber ?? lab.mobile,
+  altMobile: lab.user?.altPhoneNumber ?? lab.alt_mobile,
+  email: lab.user?.email ?? lab.email,
   labType: lab.lab_type,
   lat: lab.lat,
   long: lab.long,
@@ -45,14 +45,25 @@ export const getLabs = async (req: Request, res: Response) => {
     if (search) {
       whereClause.OR = [
         { institute: { contains: search as string, mode: "insensitive" } },
-        { head: { contains: search as string, mode: "insensitive" } },
-        { email: { contains: search as string, mode: "insensitive" } },
+        { user: { userName: { contains: search as string, mode: "insensitive" } } },
+        { user: { email: { contains: search as string, mode: "insensitive" } } },
+        { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
         { division: { contains: search as string, mode: "insensitive" } },
       ];
     }
 
     const labs = await prisma.labs.findMany({
       where: whereClause,
+      include: {
+        user: {
+          select: {
+            userName: true,
+            email: true,
+            phoneNumber: true,
+            altPhoneNumber: true,
+          },
+        },
+      },
       orderBy: {
         id: "asc",
       },
@@ -82,6 +93,16 @@ export const getLabById = async (req: Request, res: Response) => {
     const lab = await prisma.labs.findUnique({
       where: {
         id: parseInt(id as string),
+      },
+      include: {
+        user: {
+          select: {
+            userName: true,
+            email: true,
+            phoneNumber: true,
+            altPhoneNumber: true,
+          },
+        },
       },
     });
 
