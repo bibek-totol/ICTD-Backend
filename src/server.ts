@@ -41,6 +41,9 @@ app.use(express.urlencoded({ limit: "1000mb", extended: true }));
 
 app.use(cookieParser());
 
+// Serve static files for uploaded images
+app.use("/uploads", express.static("uploads"));
+
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: true, message: "Server is running" });
 });

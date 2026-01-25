@@ -15,23 +15,27 @@ export const createLabReport = async (req: Request, res: Response) => {
             ups,
             isFunctional,
             damageDetails,
-            storageConditions,
             recommendations,
         } = req.body;
+
+        // Get uploaded files from multer
+        const files = req.files as Express.Multer.File[];
+        const storageImages: string[] = files ? files.map(file => `/uploads/storage-images/${file.filename}`) : [];
 
         const report = await prisma.labReport.create({
             data: {
                 labId: parseInt(labId),
-                basicRobotics,
-                advancedRobotics,
-                threeDPrinter,
-                vrHeadset,
-                networkCamera,
-                ups,
-                isFunctional,
-                damageDetails,
-                storageConditions,
-                recommendations,
+                basicRobotics: parseInt(basicRobotics) || 0,
+                advancedRobotics: parseInt(advancedRobotics) || 0,
+                threeDPrinter: parseInt(threeDPrinter) || 0,
+                vrHeadset: parseInt(vrHeadset) || 0,
+                networkCamera: parseInt(networkCamera) || 0,
+                ups: parseInt(ups) || 0,
+                isFunctional: isFunctional || null,
+                damageDetails: damageDetails || null,
+                storageConditions: null, // No longer used
+                storageImages: storageImages,
+                recommendations: recommendations || null,
             },
         });
 
@@ -118,6 +122,7 @@ export const getLabReports = async (req: Request, res: Response) => {
             isFunctional: report.isFunctional,
             damageDetails: report.damageDetails,
             storageConditions: report.storageConditions,
+            storageImages: report.storageImages,
             recommendations: report.recommendations,
             createdAt: report.createdAt,
         }));

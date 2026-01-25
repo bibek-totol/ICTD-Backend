@@ -170,6 +170,7 @@ model LabReport {
   isFunctional      String?
   damageDetails     String?
   storageConditions String?
+  storageImages     String[] @default([])
   recommendations   String?
 
   createdAt         DateTime @default(now())
