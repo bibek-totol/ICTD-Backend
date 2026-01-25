@@ -26,6 +26,8 @@ const mapLabToFrontend = (lab: any) => ({
 
 export const getLabs = async (req: Request, res: Response) => {
   try {
+    console.log("🔍 getLabs called with query:", req.query);
+
     const { division, upazila, labType, search } = req.query;
 
     const whereClause: any = {};
@@ -52,6 +54,8 @@ export const getLabs = async (req: Request, res: Response) => {
       ];
     }
 
+    console.log("🔍 Where clause:", JSON.stringify(whereClause, null, 2));
+
     const labs = await prisma.labs.findMany({
       where: whereClause,
       include: {
@@ -69,6 +73,8 @@ export const getLabs = async (req: Request, res: Response) => {
       },
     });
 
+    console.log(`✅ Found ${labs.length} labs`);
+
     const mappedLabs = labs.map(mapLabToFrontend);
 
     return res.status(200).json({
@@ -78,6 +84,7 @@ export const getLabs = async (req: Request, res: Response) => {
       count: mappedLabs.length,
     });
   } catch (error) {
+    console.error("❌ Error in getLabs:", error);
     const errorObj: AppErrorPayload = {
       fnc: "getLabs",
       error,
@@ -131,6 +138,8 @@ export const getLabById = async (req: Request, res: Response) => {
 
 export const getFilterOptions = async (req: Request, res: Response) => {
   try {
+    console.log("🔍 getFilterOptions called");
+
     const divisions = await prisma.labs.findMany({
       distinct: ["division"],
       select: {
@@ -176,6 +185,8 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       },
     });
 
+    console.log("✅ Filter options retrieved successfully");
+
     return res.status(200).json({
       success: true,
       message: "Filter options retrieved successfully",
@@ -186,6 +197,7 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    console.error("❌ Error in getFilterOptions:", error);
     const errorObj: AppErrorPayload = {
       fnc: "getFilterOptions",
       error,

@@ -12,6 +12,19 @@ export const errorHandler = (
   const statusCode =
     err instanceof AppError ? err.statusCode : 500;
 
+  // Log error details to console for debugging
+  console.error("❌ Error Handler Caught:", {
+    message: err.message,
+    statusCode,
+    path: req.originalUrl,
+    method: req.method,
+    stack: err.stack,
+    ...(err instanceof AppError && {
+      functionName: err.functionName,
+      originalError: err.originalError
+    })
+  });
+
   logErrorToDB(err, req, statusCode);
 
   res.status(statusCode).json({
@@ -20,5 +33,11 @@ export const errorHandler = (
       process.env.NODE_ENV === "production"
         ? "Something went wrong"
         : err.message,
+    ...(process.env.NODE_ENV === "development" && {
+      stack: err.stack,
+      ...(err instanceof AppError && {
+        functionName: err.functionName
+      })
+    })
   });
 };
