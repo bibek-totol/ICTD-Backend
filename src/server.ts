@@ -29,6 +29,7 @@ app.use(
       `http://localhost:${clientPort1}`,
       `http://localhost:${clientPort2}`,
       `http://localhost:${clientPort3}`,
+      `https://ictd-lab-gsi-project.vercel.app/`,
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
