@@ -18,9 +18,9 @@ export const createLabReport = async (req: Request, res: Response) => {
             recommendations,
         } = req.body;
 
-        // Get uploaded files from multer
+        // Get uploaded files from multer (Cloudinary URLs)
         const files = req.files as Express.Multer.File[];
-        const storageImages: string[] = files ? files.map(file => `/uploads/storage-images/${file.filename}`) : [];
+        const storageImages: string[] = files ? files.map((file: any) => file.path) : [];
 
         const report = await prisma.labReport.create({
             data: {
@@ -33,7 +33,7 @@ export const createLabReport = async (req: Request, res: Response) => {
                 ups: parseInt(ups) || 0,
                 isFunctional: isFunctional || null,
                 damageDetails: damageDetails || null,
-                storageConditions: null, // No longer used
+                storageConditions: null,
                 storageImages: storageImages,
                 recommendations: recommendations || null,
             },
