@@ -4,7 +4,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
 }
+
+
+
 
 enum ErrorSeverity {
   LOW
