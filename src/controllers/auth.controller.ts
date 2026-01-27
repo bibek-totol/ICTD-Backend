@@ -40,13 +40,13 @@ export const signin = async (req: Request, res: Response) => {
       });
     }
 
-    // Find user by email using Prisma
+   
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      // forbidden status code
+     
       return res.status(404).json({
         success: false,
         message: "User not exist",
