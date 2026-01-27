@@ -1,11 +1,17 @@
-import Transport from "winston-transport";
-import { prisma } from "../configs/prisma.config";
-export class PrismaVisitorTransport extends Transport {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PrismaVisitorTransport = void 0;
+const winston_transport_1 = __importDefault(require("winston-transport"));
+const prisma_config_1 = require("../configs/prisma.config");
+class PrismaVisitorTransport extends winston_transport_1.default {
     async log(info, callback) {
         setImmediate(() => this.emit("logged", info));
         try {
             const { level, message, requestId, method, path, statusCode, durationMs, ip, userAgent, device, service, environment, timezone, } = info;
-            await prisma.visitorLog.create({
+            await prisma_config_1.prisma.visitorLog.create({
                 data: {
                     level: level.toUpperCase(),
                     message,
@@ -30,3 +36,4 @@ export class PrismaVisitorTransport extends Transport {
         callback();
     }
 }
+exports.PrismaVisitorTransport = PrismaVisitorTransport;

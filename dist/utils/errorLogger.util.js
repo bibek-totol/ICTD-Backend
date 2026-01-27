@@ -1,14 +1,17 @@
-import { AppError } from "./AppError.util";
-import { prisma } from "../configs/prisma.config";
-import { ErrorSeverity, ErrorSource } from "@prisma/client";
-export const logErrorToDB = async (err, req, statusCode) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.logErrorToDB = void 0;
+const AppError_util_1 = require("./AppError.util");
+const prisma_config_1 = require("../configs/prisma.config");
+const client_1 = require("@prisma/client");
+const logErrorToDB = async (err, req, statusCode) => {
     try {
-        const appError = err instanceof AppError ? err : null;
-        await prisma.errorLog.create({
+        const appError = err instanceof AppError_util_1.AppError ? err : null;
+        await prisma_config_1.prisma.errorLog.create({
             data: {
                 message: err.message,
-                severity: appError?.severity ?? ErrorSeverity.CRITICAL,
-                source: appError?.source ?? ErrorSource.SYSTEM,
+                severity: appError?.severity ?? client_1.ErrorSeverity.CRITICAL,
+                source: appError?.source ?? client_1.ErrorSource.SYSTEM,
                 requestId: req.requestId ?? null,
                 statusCode,
                 method: req.method,
@@ -29,3 +32,4 @@ export const logErrorToDB = async (err, req, statusCode) => {
         console.error("Failed to persist error log", loggingError);
     }
 };
+exports.logErrorToDB = logErrorToDB;

@@ -14,7 +14,7 @@ export const appLogger = winston.createLogger({
     //   filename: "logs/visitor.log",
     // }),
 
-    // 🔹 Error logs
+    // // 🔹 Error logs
     // new winston.transports.File({
     //   filename: "logs/error.log",
     //   level: "error",

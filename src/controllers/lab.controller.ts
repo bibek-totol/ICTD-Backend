@@ -15,10 +15,10 @@ const mapLabToFrontend = (lab: any) => ({
   division: lab.division,
   upazila: lab.upazila,
   seat: lab.seat,
-  head: lab.user?.userName ?? lab.head,
-  mobile: lab.user?.phoneNumber ?? lab.mobile,
-  altMobile: lab.user?.altPhoneNumber ?? lab.alt_mobile,
-  email: lab.user?.email ?? lab.email,
+  head: lab.head,
+  mobile: lab.mobile,
+  altMobile: lab.alt_mobile,
+  email: lab.email,
   labType: lab.lab_type,
   lat: lab.lat,
   long: lab.long,
@@ -26,8 +26,6 @@ const mapLabToFrontend = (lab: any) => ({
 
 export const getLabs = async (req: Request, res: Response) => {
   try {
-    console.log("🔍 getLabs called with query:", req.query);
-
     const { division, upazila, labType, search } = req.query;
 
     const whereClause: any = {};
@@ -47,33 +45,18 @@ export const getLabs = async (req: Request, res: Response) => {
     if (search) {
       whereClause.OR = [
         { institute: { contains: search as string, mode: "insensitive" } },
-        { user: { userName: { contains: search as string, mode: "insensitive" } } },
-        { user: { email: { contains: search as string, mode: "insensitive" } } },
-        { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
+        { head: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
         { division: { contains: search as string, mode: "insensitive" } },
       ];
     }
 
-    console.log("🔍 Where clause:", JSON.stringify(whereClause, null, 2));
-
     const labs = await prisma.labs.findMany({
       where: whereClause,
-      include: {
-        user: {
-          select: {
-            userName: true,
-            email: true,
-            phoneNumber: true,
-            altPhoneNumber: true,
-          },
-        },
-      },
       orderBy: {
         id: "asc",
       },
     });
-
-    console.log(`✅ Found ${labs.length} labs`);
 
     const mappedLabs = labs.map(mapLabToFrontend);
 
@@ -84,7 +67,6 @@ export const getLabs = async (req: Request, res: Response) => {
       count: mappedLabs.length,
     });
   } catch (error) {
-    console.error("❌ Error in getLabs:", error);
     const errorObj: AppErrorPayload = {
       fnc: "getLabs",
       error,
@@ -100,16 +82,6 @@ export const getLabById = async (req: Request, res: Response) => {
     const lab = await prisma.labs.findUnique({
       where: {
         id: parseInt(id as string),
-      },
-      include: {
-        user: {
-          select: {
-            userName: true,
-            email: true,
-            phoneNumber: true,
-            altPhoneNumber: true,
-          },
-        },
       },
     });
 
@@ -138,8 +110,6 @@ export const getLabById = async (req: Request, res: Response) => {
 
 export const getFilterOptions = async (req: Request, res: Response) => {
   try {
-    console.log("🔍 getFilterOptions called");
-
     const divisions = await prisma.labs.findMany({
       distinct: ["division"],
       select: {
@@ -185,8 +155,6 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       },
     });
 
-    console.log("✅ Filter options retrieved successfully");
-
     return res.status(200).json({
       success: true,
       message: "Filter options retrieved successfully",
@@ -197,7 +165,6 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error in getFilterOptions:", error);
     const errorObj: AppErrorPayload = {
       fnc: "getFilterOptions",
       error,

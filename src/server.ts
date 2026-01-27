@@ -6,7 +6,6 @@ import { connectDatabase } from "./configs/prisma.config";
 import UserRouter from "./routes/user.routes";
 import LabRouter from "./routes/lab.routes";
 import AuthRouter from "./routes/auth.routes";
-import LabReportRouter from "./routes/labReport.routes";
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from "./middlewares/logger.m";
 import { errorHandler } from "./middlewares/errorHandler.m";
@@ -29,7 +28,6 @@ app.use(
       `http://localhost:${clientPort1}`,
       `http://localhost:${clientPort2}`,
       `http://localhost:${clientPort3}`,
-      `https://ictd-lab-gsi-project.vercel.app`,
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -51,7 +49,6 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/v1/auth", AuthRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/labs", LabRouter);
-app.use("/api/v1/lab-reports", LabReportRouter);
 
 app.use(errorHandler);
 

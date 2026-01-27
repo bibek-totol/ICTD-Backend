@@ -1,6 +1,12 @@
-import dotenv from "dotenv";
-import path from "path";
-dotenv.config({ path: path.join(process.cwd(), ".env") });
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+if (process.env.NODE_ENV !== "production") {
+    dotenv_1.default.config();
+}
 if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is missing in .env");
 }
@@ -27,4 +33,4 @@ const config = {
     add_user_support: checkAddUserSupport(),
     email_verification_expiry: Number(process.env.EMAIL_VERIFICATION_EXPIRY),
 };
-export default config;
+exports.default = config;

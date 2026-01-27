@@ -1,13 +1,16 @@
-import { randomUUID } from "crypto";
-import { appLogger } from "../utils/logger.util";
-import { Role } from "@prisma/client";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.requestLogger = void 0;
+const crypto_1 = require("crypto");
+const logger_util_1 = require("../utils/logger.util");
+const client_1 = require("@prisma/client");
 const TIME_ZONE = "Asia/Dhaka";
-export const requestLogger = (req, res, next) => {
+const requestLogger = (req, res, next) => {
     if (req.path === "/favicon.ico") {
         return next();
     }
     const start = Date.now();
-    const requestId = randomUUID();
+    const requestId = (0, crypto_1.randomUUID)();
     req.requestId = requestId;
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
         req.socket.remoteAddress ||
@@ -16,7 +19,7 @@ export const requestLogger = (req, res, next) => {
     const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
     res.on("finish", () => {
         const durationMs = Date.now() - start;
-        appLogger.info("HTTP Request", {
+        logger_util_1.appLogger.info("HTTP Request", {
             requestId,
             method: req.method,
             path: req.originalUrl,
@@ -31,9 +34,10 @@ export const requestLogger = (req, res, next) => {
         });
     });
     req.user = {
-        role: Role.Anonymous,
+        role: client_1.Role.Anonymous,
         userId: "",
         requestId: requestId,
     };
     next();
 };
+exports.requestLogger = requestLogger;

@@ -1,6 +1,9 @@
-import { prisma } from "../configs/prisma.config";
-import { AppError } from "../utils/AppError.util";
-import { ShapeData, } from "../interfaces_and_types/labs.interface";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.newGetLabs = exports.getFilterOptions = exports.getLabById = exports.getLabs = void 0;
+const prisma_config_1 = require("../configs/prisma.config");
+const AppError_util_1 = require("../utils/AppError.util");
+const labs_interface_1 = require("../interfaces_and_types/labs.interface");
 const mapLabToFrontend = (lab) => ({
     id: lab.id,
     institute: lab.institute,
@@ -15,7 +18,7 @@ const mapLabToFrontend = (lab) => ({
     lat: lab.lat,
     long: lab.long,
 });
-export const getLabs = async (req, res) => {
+const getLabs = async (req, res) => {
     try {
         const { division, upazila, labType, search } = req.query;
         const whereClause = {};
@@ -36,7 +39,7 @@ export const getLabs = async (req, res) => {
                 { division: { contains: search, mode: "insensitive" } },
             ];
         }
-        const labs = await prisma.labs.findMany({
+        const labs = await prisma_config_1.prisma.labs.findMany({
             where: whereClause,
             orderBy: {
                 id: "asc",
@@ -55,13 +58,14 @@ export const getLabs = async (req, res) => {
             fnc: "getLabs",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 };
-export const getLabById = async (req, res) => {
+exports.getLabs = getLabs;
+const getLabById = async (req, res) => {
     try {
         const { id } = req.params;
-        const lab = await prisma.labs.findUnique({
+        const lab = await prisma_config_1.prisma.labs.findUnique({
             where: {
                 id: parseInt(id),
             },
@@ -84,12 +88,13 @@ export const getLabById = async (req, res) => {
             fnc: "getLabById",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 };
-export const getFilterOptions = async (req, res) => {
+exports.getLabById = getLabById;
+const getFilterOptions = async (req, res) => {
     try {
-        const divisions = await prisma.labs.findMany({
+        const divisions = await prisma_config_1.prisma.labs.findMany({
             distinct: ["division"],
             select: {
                 division: true,
@@ -103,7 +108,7 @@ export const getFilterOptions = async (req, res) => {
                 division: "asc",
             },
         });
-        const upazilas = await prisma.labs.findMany({
+        const upazilas = await prisma_config_1.prisma.labs.findMany({
             distinct: ["upazila"],
             select: {
                 upazila: true,
@@ -117,7 +122,7 @@ export const getFilterOptions = async (req, res) => {
                 upazila: "asc",
             },
         });
-        const labTypes = await prisma.labs.findMany({
+        const labTypes = await prisma_config_1.prisma.labs.findMany({
             distinct: ["lab_type"],
             select: {
                 lab_type: true,
@@ -146,12 +151,13 @@ export const getFilterOptions = async (req, res) => {
             fnc: "getFilterOptions",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 };
-export const newGetLabs = async (req, res) => {
+exports.getFilterOptions = getFilterOptions;
+const newGetLabs = async (req, res) => {
     try {
-        const labs = await prisma.labs.findMany({
+        const labs = await prisma_config_1.prisma.labs.findMany({
             select: {
                 id: true,
                 division: true,
@@ -173,7 +179,7 @@ export const newGetLabs = async (req, res) => {
         });
         const outputData = [];
         for (let lab of labs) {
-            outputData.push(new ShapeData(lab));
+            outputData.push(new labs_interface_1.ShapeData(lab));
         }
         return res.status(200).json({
             success: true,
@@ -187,6 +193,7 @@ export const newGetLabs = async (req, res) => {
             fnc: "newGetLabs",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 };
+exports.newGetLabs = newGetLabs;

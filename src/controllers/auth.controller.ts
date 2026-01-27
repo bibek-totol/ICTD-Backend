@@ -9,7 +9,8 @@ import { sendMailWithVerificationCode } from "../services/emails/sendMail.util";
 import { isEmail } from "../utils/checkUserInput.utils";
 import { generateUsersManagementKey } from "../utils/generateKey.util";
 import config from "../configs/env.config";
-import { PageState, Role } from "@prisma/client";
+import { PageState } from "@prisma/client";
+import { Role } from "@prisma/client";
 
 export const signin = async (req: Request, res: Response) => {
   try {
@@ -70,11 +71,8 @@ export const signin = async (req: Request, res: Response) => {
 
     const payLoad: CookiesAuthPayLoad = {
       id: user.id,
-      role: user.role ?? Role.LabAdmin,
+      role: user.role || Role.Anonymous,
     };
-    if (user?.role) {
-      payLoad.role = user.role;
-    }
 
     const typeCheck = assignJwtToken(req, res, payLoad);
 
@@ -177,11 +175,8 @@ export const signup = async (req: Request, res: Response) => {
 
     const payLoad: CookiesAuthPayLoad = {
       id: user.id,
-      role: user.role ?? Role.LabAdmin,
+      role: user.role || Role.Anonymous,
     };
-    if (user?.role) {
-      payLoad.role = user.role;
-    }
 
     const typeCheck = assignJwtToken(req, res, payLoad);
 

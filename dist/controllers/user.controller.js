@@ -1,4 +1,5 @@
-export {};
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 // import { pool } from "../config/db";
 // import { AuthRequest } from "../middlewares/auth.m";
 // export const getUsers = async (req: AuthRequest, res: Response) => {
