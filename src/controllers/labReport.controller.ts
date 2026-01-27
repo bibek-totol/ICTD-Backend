@@ -18,7 +18,7 @@ export const createLabReport = async (req: Request, res: Response) => {
             recommendations,
         } = req.body;
 
-        // Get uploaded files from multer (Cloudinary URLs)
+       
         const files = req.files as Express.Multer.File[];
         const storageImages: string[] = files ? files.map((file: any) => file.path) : [];
 
