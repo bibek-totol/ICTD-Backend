@@ -9,8 +9,7 @@ import { sendMailWithVerificationCode } from "../services/emails/sendMail.util";
 import { isEmail } from "../utils/checkUserInput.utils";
 import { generateUsersManagementKey } from "../utils/generateKey.util";
 import config from "../configs/env.config";
-import { PageState } from "@prisma/client";
-import { Role } from "@prisma/client";
+import { PageState, Role } from "@prisma/client";
 
 export const signin = async (req: Request, res: Response) => {
   try {
@@ -71,6 +70,7 @@ export const signin = async (req: Request, res: Response) => {
 
     const payLoad: CookiesAuthPayLoad = {
       id: user.id,
+      role: user.role ?? Role.LabAdmin,
     };
     if (user?.role) {
       payLoad.role = user.role;
@@ -177,6 +177,7 @@ export const signup = async (req: Request, res: Response) => {
 
     const payLoad: CookiesAuthPayLoad = {
       id: user.id,
+      role: user.role ?? Role.LabAdmin,
     };
     if (user?.role) {
       payLoad.role = user.role;
