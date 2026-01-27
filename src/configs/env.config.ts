@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.join(process.cwd(), ".env") });
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is missing in .env");
@@ -30,6 +32,12 @@ const config = {
   jwt_expires_in: (process.env.JWT_EXPIRES_IN as string) || "7d",
   add_user_support: checkAddUserSupport(),
   email_verification_expiry: Number(process.env.EMAIL_VERIFICATION_EXPIRY),
+  
+  cloudinary: {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
+    api_key: process.env.CLOUDINARY_API_KEY as string,
+    api_secret: process.env.CLOUDINARY_API_SECRET as string,
+  },
 };
 
 export default config;

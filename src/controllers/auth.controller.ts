@@ -72,6 +72,9 @@ export const signin = async (req: Request, res: Response) => {
       id: user.id,
       role: user.role ?? Role.LabAdmin,
     };
+    if (user?.role) {
+      payLoad.role = user.role;
+    }
 
     const typeCheck = assignJwtToken(req, res, payLoad);
 
@@ -176,6 +179,9 @@ export const signup = async (req: Request, res: Response) => {
       id: user.id,
       role: user.role ?? Role.LabAdmin,
     };
+    if (user?.role) {
+      payLoad.role = user.role;
+    }
 
     const typeCheck = assignJwtToken(req, res, payLoad);
 
