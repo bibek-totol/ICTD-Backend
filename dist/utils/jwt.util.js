@@ -1,27 +1,36 @@
-import jwt from "jsonwebtoken";
-import checkUserAgent from "./checkUserAgent.util";
-import { ReqTypeEnum } from "../interfaces_and_types/ReqType.enum";
-import { assignCookieOptions, } from "../configs/options/cookies.option";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateJwtToken = generateJwtToken;
+exports.assignJwtToken = assignJwtToken;
+exports.deleteJwtToken = deleteJwtToken;
+exports.verifyJwtToken = verifyJwtToken;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const checkUserAgent_util_1 = __importDefault(require("./checkUserAgent.util"));
+const ReqType_enum_1 = require("../interfaces_and_types/ReqType.enum");
+const cookies_option_1 = require("../configs/options/cookies.option");
 const JWT_SECRET = process.env.JWT_SECRET;
-export function generateJwtToken(payload, options = {}) {
+function generateJwtToken(payload, options = {}) {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
         throw new Error("JWT_SECRET is not defined in environment variables");
     }
-    const token = jwt.sign(payload, secret, {
+    const token = jsonwebtoken_1.default.sign(payload, secret, {
         expiresIn: "7d",
         ...options,
     });
     return token;
 }
-export function assignJwtToken(req, res, payload) {
+function assignJwtToken(req, res, payload) {
     try {
         const { ReqType } = req.body;
-        const isBrowser = checkUserAgent(req);
+        const isBrowser = (0, checkUserAgent_util_1.default)(req);
         // check ReqType === "mobileApps" || !isBrowser ---> then it is mobileApplication
         // else ---> it is webApplication
         const token = generateJwtToken(payload);
-        if (ReqType === ReqTypeEnum.MobileApp && !isBrowser) {
+        if (ReqType === ReqType_enum_1.ReqTypeEnum.MobileApp && !isBrowser) {
             // return bearer token for mobile, postman, APIs
             return {
                 success: true,
@@ -31,7 +40,7 @@ export function assignJwtToken(req, res, payload) {
             };
         }
         // when it is web
-        res.cookie("token", token, assignCookieOptions);
+        res.cookie("token", token, cookies_option_1.assignCookieOptions);
         return {
             success: true,
             type: "cookie",
@@ -49,13 +58,13 @@ export function assignJwtToken(req, res, payload) {
         };
     }
 }
-export function deleteJwtToken(req, res, payload) {
+function deleteJwtToken(req, res, payload) {
     const { ReqType } = req.body;
-    const isBrowser = checkUserAgent(req);
+    const isBrowser = (0, checkUserAgent_util_1.default)(req);
     // check ReqType === "mobileApps" || !isBrowser ---> then it is mobileApplication
     // else ---> it is webApplication
     const token = generateJwtToken(payload);
-    if (ReqType === ReqTypeEnum.MobileApp && !isBrowser) {
+    if (ReqType === ReqType_enum_1.ReqTypeEnum.MobileApp && !isBrowser) {
         // return bearer token for mobile, postman, APIs
         return {
             type: "Bearer",
@@ -64,16 +73,16 @@ export function deleteJwtToken(req, res, payload) {
         };
     }
     // when it is web
-    res.cookie("token", token, assignCookieOptions);
+    res.cookie("token", token, cookies_option_1.assignCookieOptions);
     return {
         type: "cookie",
         token: null, // browser doesn't need returned token
         message: "Token assigned via cookies",
     };
 }
-export function verifyJwtToken(token) {
+function verifyJwtToken(token) {
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         return decoded; // contains { id: userId, iat, exp }
     }
     catch (error) {

@@ -1,12 +1,9 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppError = void 0;
 // src/utils/AppError.util.ts
-import { ErrorSeverity, ErrorSource } from "@prisma/client";
-export class AppError extends Error {
-    statusCode;
-    functionName;
-    severity;
-    source;
-    originalError;
-    isOperational;
+const client_1 = require("@prisma/client");
+class AppError extends Error {
     constructor(payload) {
         const resolvedMessage = payload.msg ||
             (payload.error instanceof Error
@@ -23,10 +20,11 @@ export class AppError extends Error {
         }
         this.severity =
             this.statusCode >= 500
-                ? ErrorSeverity.CRITICAL
-                : ErrorSeverity.MEDIUM;
-        this.source = ErrorSource.API;
+                ? client_1.ErrorSeverity.CRITICAL
+                : client_1.ErrorSeverity.MEDIUM;
+        this.source = client_1.ErrorSource.API;
         this.isOperational = true;
         Error.captureStackTrace(this, this.constructor);
     }
 }
+exports.AppError = AppError;

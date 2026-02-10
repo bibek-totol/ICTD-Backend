@@ -1,9 +1,14 @@
-import express from "express";
-import { AppError } from "../utils/AppError.util";
-import config from "../configs/env.config";
-import { prisma } from "../configs/prisma.config";
-import { isEmail, isValidRole } from "../utils/checkUserInput.utils";
-const router = express.Router();
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const AppError_util_1 = require("../utils/AppError.util");
+const env_config_1 = __importDefault(require("../configs/env.config"));
+const prisma_config_1 = require("../configs/prisma.config");
+const checkUserInput_utils_1 = require("../utils/checkUserInput.utils");
+const router = express_1.default.Router();
 // router.get("/", authorizeMiddleware, getUsers); // admin only
 // router.get("/:userId", getUserDetails); // both
 // router.put("/:userId", updateUser); // both
@@ -21,12 +26,12 @@ router.get("/", (req, res) => {
             fnc: "Any",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 });
 router.post("/add/users", async (req, res) => {
     try {
-        if (!config.add_user_support) {
+        if (!env_config_1.default.add_user_support) {
             return res.status(400).json({
                 success: false,
                 message: "Add Users Support is closed!",
@@ -111,7 +116,7 @@ router.post("/add/users", async (req, res) => {
                     });
                 }
                 let checkEmail = user.email.toLowerCase().trim();
-                if (!isEmail(checkEmail)) {
+                if (!(0, checkUserInput_utils_1.isEmail)(checkEmail)) {
                     return res.status(400).json({
                         success: false,
                         message: "email must be type email",
@@ -159,7 +164,7 @@ router.post("/add/users", async (req, res) => {
                     });
                 }
                 let checkRole = user.role.trim();
-                if (!isValidRole(checkRole)) {
+                if (!(0, checkUserInput_utils_1.isValidRole)(checkRole)) {
                     return res.status(400).json({
                         success: false,
                         message: "role must be valid role type",
@@ -195,7 +200,7 @@ router.post("/add/users", async (req, res) => {
             if (user?.role) {
                 insertData.role = user.role;
             }
-            const createUser = await prisma.user.create({
+            const createUser = await prisma_config_1.prisma.user.create({
                 data: insertData,
             });
         }
@@ -212,12 +217,12 @@ router.post("/add/users", async (req, res) => {
             fnc: "Any",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 });
 router.post("/add/labs", async (req, res) => {
     try {
-        if (!config.add_user_support) {
+        if (!env_config_1.default.add_user_support) {
             return res.status(400).json({
                 success: false,
                 message: "Add Labs Support is closed!",
@@ -231,7 +236,7 @@ router.post("/add/labs", async (req, res) => {
             });
         }
         for (let lab of labs) {
-            const user = await prisma.user.findUnique({
+            const user = await prisma_config_1.prisma.user.findUnique({
                 where: {
                     email: lab.email,
                 },
@@ -267,7 +272,7 @@ router.post("/add/labs", async (req, res) => {
             if (lab?.long) {
                 insertData.long = lab.long;
             }
-            const createLab = await prisma.labs.create({
+            const createLab = await prisma_config_1.prisma.labs.create({
                 data: insertData,
             });
         }
@@ -282,7 +287,7 @@ router.post("/add/labs", async (req, res) => {
             fnc: "Any",
             error,
         };
-        throw new AppError(errorObj);
+        throw new AppError_util_1.AppError(errorObj);
     }
 });
-export default router;
+exports.default = router;

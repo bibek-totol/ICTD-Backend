@@ -1,8 +1,14 @@
-import { Role } from "@prisma/client";
-import { AppError } from "../utils/AppError.util";
-import jwt from "jsonwebtoken";
-import config from "../configs/env.config";
-import { prisma } from "../configs/prisma.config";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LabAdminAuthorizationMiddleware = exports.UpazilaAdminAuthorizationMiddleware = exports.DistrictAdminAuthorizationMiddleware = exports.DivisionAdminAuthorizationMiddleware = exports.SuperAdminAuthorizationMiddleware = exports.AuthorizationMiddleware = void 0;
+const client_1 = require("@prisma/client");
+const AppError_util_1 = require("../utils/AppError.util");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const env_config_1 = __importDefault(require("../configs/env.config"));
+const prisma_config_1 = require("../configs/prisma.config");
 /* AppErrorPayload structure
   scode?: number;          // HTTP status code
   fnc: string;            // function / API name
@@ -10,7 +16,7 @@ import { prisma } from "../configs/prisma.config";
   error: unknown;         // original error (optional)
 */
 // Level3 Middleware
-export const AuthorizationMiddleware = async (req, res, next) => {
+const AuthorizationMiddleware = async (req, res, next) => {
     try {
         const token = req.cookies?.token;
         if (!token) {
@@ -19,7 +25,7 @@ export const AuthorizationMiddleware = async (req, res, next) => {
                 message: "Unauthorized: Token missing",
             });
         }
-        const decoded = jwt.verify(token, config.jwt_secret);
+        const decoded = jsonwebtoken_1.default.verify(token, env_config_1.default.jwt_secret);
         console.log("decoded ==> ", decoded);
         if (!decoded.id || !decoded.role) {
             return res.status(401).json({
@@ -27,7 +33,7 @@ export const AuthorizationMiddleware = async (req, res, next) => {
                 message: "Unauthorized: Invalid Token value",
             });
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_config_1.prisma.user.findUnique({
             where: { id: decoded.id, role: decoded.role },
         });
         if (!user) {
@@ -56,11 +62,12 @@ export const AuthorizationMiddleware = async (req, res, next) => {
             msg: `${"Error from AuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
+exports.AuthorizationMiddleware = AuthorizationMiddleware;
 // Level4 Middlewares
-export const SuperAdminAuthorizationMiddleware = (req, res, next) => {
+const SuperAdminAuthorizationMiddleware = (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -68,7 +75,7 @@ export const SuperAdminAuthorizationMiddleware = (req, res, next) => {
                 message: "Unauthorized: User not found",
             });
         }
-        if (req.user.role !== Role.SuperAdmin) {
+        if (req.user.role !== client_1.Role.SuperAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden: Admin only",
@@ -82,10 +89,11 @@ export const SuperAdminAuthorizationMiddleware = (req, res, next) => {
             msg: `${"Error from superAdminAuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
-export const DivisionAdminAuthorizationMiddleware = (req, res, next) => {
+exports.SuperAdminAuthorizationMiddleware = SuperAdminAuthorizationMiddleware;
+const DivisionAdminAuthorizationMiddleware = (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -93,7 +101,7 @@ export const DivisionAdminAuthorizationMiddleware = (req, res, next) => {
                 message: "Unauthorized: User not found",
             });
         }
-        if (req.user.role !== Role.DivisionAdmin) {
+        if (req.user.role !== client_1.Role.DivisionAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden: DivisionAdmin only",
@@ -107,10 +115,11 @@ export const DivisionAdminAuthorizationMiddleware = (req, res, next) => {
             msg: `${"Error from DivisionAdminAuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
-export const DistrictAdminAuthorizationMiddleware = (req, res, next) => {
+exports.DivisionAdminAuthorizationMiddleware = DivisionAdminAuthorizationMiddleware;
+const DistrictAdminAuthorizationMiddleware = (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -118,7 +127,7 @@ export const DistrictAdminAuthorizationMiddleware = (req, res, next) => {
                 message: "Unauthorized: User not found",
             });
         }
-        if (req.user.role !== Role.DistrictAdmin) {
+        if (req.user.role !== client_1.Role.DistrictAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden: DistrictAdmin only",
@@ -132,10 +141,11 @@ export const DistrictAdminAuthorizationMiddleware = (req, res, next) => {
             msg: `${"Error from DistrictAdminAuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
-export const UpazilaAdminAuthorizationMiddleware = (req, res, next) => {
+exports.DistrictAdminAuthorizationMiddleware = DistrictAdminAuthorizationMiddleware;
+const UpazilaAdminAuthorizationMiddleware = (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -143,7 +153,7 @@ export const UpazilaAdminAuthorizationMiddleware = (req, res, next) => {
                 message: "Unauthorized: User not found",
             });
         }
-        if (req.user.role !== Role.UpazilaAdmin) {
+        if (req.user.role !== client_1.Role.UpazilaAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden: UpazilaAdmin only",
@@ -157,10 +167,11 @@ export const UpazilaAdminAuthorizationMiddleware = (req, res, next) => {
             msg: `${"Error from UpazilaAdminAuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
-export const LabAdminAuthorizationMiddleware = async (req, res, next) => {
+exports.UpazilaAdminAuthorizationMiddleware = UpazilaAdminAuthorizationMiddleware;
+const LabAdminAuthorizationMiddleware = async (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({
@@ -168,7 +179,7 @@ export const LabAdminAuthorizationMiddleware = async (req, res, next) => {
                 message: "Unauthorized: User not found",
             });
         }
-        if (req.user.role !== Role.LabAdmin) {
+        if (req.user.role !== client_1.Role.LabAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Forbidden: LabAdmin only",
@@ -182,6 +193,7 @@ export const LabAdminAuthorizationMiddleware = async (req, res, next) => {
             msg: `${"Error from LabAdminAuthorizationMiddleware"}: ${error.message}`,
             error,
         };
-        throw new AppError(payload);
+        throw new AppError_util_1.AppError(payload);
     }
 };
+exports.LabAdminAuthorizationMiddleware = LabAdminAuthorizationMiddleware;

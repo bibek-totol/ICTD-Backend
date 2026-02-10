@@ -1,13 +1,19 @@
-import { prisma } from "../configs/prisma.config";
-import bcrypt from "bcryptjs";
-import { assignJwtToken } from "../utils/jwt.util";
-import { AppError } from "../utils/AppError.util";
-import { sendMailWithVerificationCode } from "../services/emails/sendMail.util";
-import { isEmail } from "../utils/checkUserInput.utils";
-import { generateUsersManagementKey } from "../utils/generateKey.util";
-import config from "../configs/env.config";
-import { PageState } from "@prisma/client";
-export const signin = async (req, res) => {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.verifyEmailCode = exports.verifyEmail = exports.signup = exports.signin = void 0;
+const prisma_config_1 = require("../configs/prisma.config");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const jwt_util_1 = require("../utils/jwt.util");
+const AppError_util_1 = require("../utils/AppError.util");
+const sendMail_util_1 = require("../services/emails/sendMail.util");
+const checkUserInput_utils_1 = require("../utils/checkUserInput.utils");
+const generateKey_util_1 = require("../utils/generateKey.util");
+const env_config_1 = __importDefault(require("../configs/env.config"));
+const client_1 = require("@prisma/client");
+const signin = async (req, res) => {
     try {
         let { email, password } = req.body;
         if (typeof email !== "string" || typeof password !== "string") {
@@ -24,18 +30,16 @@ export const signin = async (req, res) => {
                 message: "Email and password are required",
             });
         }
-        if (!isEmail(email)) {
+        if (!(0, checkUserInput_utils_1.isEmail)(email)) {
             return res.status(400).json({
                 success: false,
                 message: "email must be type email",
             });
         }
-        // Find user by email using Prisma
-        const user = await prisma.user.findUnique({
+        const user = await prisma_config_1.prisma.user.findUnique({
             where: { email },
         });
         if (!user) {
-            // forbidden status code
             return res.status(404).json({
                 success: false,
                 message: "User not exist",
@@ -47,7 +51,7 @@ export const signin = async (req, res) => {
                 message: "User is not verified",
             });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcryptjs_1.default.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
@@ -56,11 +60,14 @@ export const signin = async (req, res) => {
         }
         const payLoad = {
             id: user.id,
-            role: user.role,
+            role: user.role ?? client_1.Role.LabAdmin,
         };
-        const typeCheck = assignJwtToken(req, res, payLoad);
+        if (user?.role) {
+            payLoad.role = user.role;
+        }
+        const typeCheck = (0, jwt_util_1.assignJwtToken)(req, res, payLoad);
         if (!typeCheck.success) {
-            throw new AppError({
+            throw new AppError_util_1.AppError({
                 fnc: "signin generateJwtToken",
                 error: typeCheck?.error,
             });
@@ -92,10 +99,11 @@ export const signin = async (req, res) => {
         });
     }
     catch (error) {
-        throw new AppError({ fnc: "signin", error });
+        throw new AppError_util_1.AppError({ fnc: "signin", error });
     }
 };
-export const signup = async (req, res) => {
+exports.signin = signin;
+const signup = async (req, res) => {
     try {
         let { email, password } = req.body;
         if (typeof email !== "string" || typeof password !== "string") {
@@ -112,14 +120,14 @@ export const signup = async (req, res) => {
                 message: "Email and password are required",
             });
         }
-        if (!isEmail(email)) {
+        if (!(0, checkUserInput_utils_1.isEmail)(email)) {
             return res.status(400).json({
                 success: false,
                 message: "email must be type email",
             });
         }
         // Find user by email using Prisma
-        const user = await prisma.user.findUnique({
+        const user = await prisma_config_1.prisma.user.findUnique({
             where: { email },
         });
         if (!user) {
@@ -130,15 +138,15 @@ export const signup = async (req, res) => {
             });
         }
         // check it
-        if (user.pageState !== PageState.VerifiedEmail) {
+        if (user.pageState !== client_1.PageState.VerifiedEmail) {
             return res.status(404).json({
                 success: false,
                 message: "please verify your email",
             });
         }
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        await prisma.user.update({
+        const salt = await bcryptjs_1.default.genSalt(10);
+        const hashedPassword = await bcryptjs_1.default.hash(password, salt);
+        await prisma_config_1.prisma.user.update({
             where: { id: user.id },
             data: {
                 password: hashedPassword,
@@ -146,31 +154,34 @@ export const signup = async (req, res) => {
         });
         const payLoad = {
             id: user.id,
-            role: user.role,
+            role: user.role ?? client_1.Role.LabAdmin,
         };
-        const typeCheck = assignJwtToken(req, res, payLoad);
+        if (user?.role) {
+            payLoad.role = user.role;
+        }
+        const typeCheck = (0, jwt_util_1.assignJwtToken)(req, res, payLoad);
         if (!typeCheck.success) {
-            throw new AppError({
+            throw new AppError_util_1.AppError({
                 fnc: "signin generateJwtToken",
                 error: typeCheck?.error,
             });
         }
         if (user.role === "SuperAdmin") {
-            await prisma.user.update({
+            await prisma_config_1.prisma.user.update({
                 where: {
                     email: email,
                 },
                 data: {
-                    usersManagementKey: generateUsersManagementKey(),
+                    usersManagementKey: (0, generateKey_util_1.generateUsersManagementKey)(),
                 },
             });
         }
-        await prisma.user.update({
+        await prisma_config_1.prisma.user.update({
             where: {
                 email: email,
             },
             data: {
-                pageState: PageState.Registered,
+                pageState: client_1.PageState.Registered,
             },
         });
         // typeCheck.type === "Bearer" ---> MobileApp
@@ -200,10 +211,11 @@ export const signup = async (req, res) => {
         });
     }
     catch (error) {
-        throw new AppError({ fnc: "signup", error });
+        throw new AppError_util_1.AppError({ fnc: "signup", error });
     }
 };
-export const verifyEmail = async (req, res) => {
+exports.signup = signup;
+const verifyEmail = async (req, res) => {
     try {
         let { email } = req.body;
         if (typeof email !== "string") {
@@ -219,14 +231,14 @@ export const verifyEmail = async (req, res) => {
                 message: "Email is required",
             });
         }
-        if (!isEmail(email)) {
+        if (!(0, checkUserInput_utils_1.isEmail)(email)) {
             return res.status(400).json({
                 success: false,
                 message: "email must be type email",
             });
         }
         // Find user by email using Prisma
-        const user = await prisma.user.findUnique({
+        const user = await prisma_config_1.prisma.user.findUnique({
             where: { email },
         });
         if (!user) {
@@ -242,13 +254,13 @@ export const verifyEmail = async (req, res) => {
             });
         }
         // send email verification code from here
-        const emailVerificationCode = await sendMailWithVerificationCode(email);
-        await prisma.user.update({
+        const emailVerificationCode = await (0, sendMail_util_1.sendMailWithVerificationCode)(email);
+        await prisma_config_1.prisma.user.update({
             where: { id: user.id },
             data: {
-                pageState: PageState.SendVerifiedEmailCode,
+                pageState: client_1.PageState.SendVerifiedEmailCode,
                 verificationCode: emailVerificationCode,
-                verificationExpiry: new Date(Date.now() + config.email_verification_expiry * 24 * 60 * 60 * 1000),
+                verificationExpiry: new Date(Date.now() + env_config_1.default.email_verification_expiry * 24 * 60 * 60 * 1000),
             },
         });
         return res.status(201).json({
@@ -260,10 +272,11 @@ export const verifyEmail = async (req, res) => {
         });
     }
     catch (error) {
-        throw new AppError({ fnc: "verifyEmail", error });
+        throw new AppError_util_1.AppError({ fnc: "verifyEmail", error });
     }
 };
-export const verifyEmailCode = async (req, res) => {
+exports.verifyEmail = verifyEmail;
+const verifyEmailCode = async (req, res) => {
     try {
         let { email, emailCode } = req.body;
         if (typeof email === "string") {
@@ -278,13 +291,13 @@ export const verifyEmailCode = async (req, res) => {
                 message: "emailCode and email are required",
             });
         }
-        if (!isEmail(email)) {
+        if (!(0, checkUserInput_utils_1.isEmail)(email)) {
             return res.status(400).json({
                 success: false,
                 message: "email must be type email",
             });
         }
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma_config_1.prisma.user.findUnique({ where: { email } });
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -297,7 +310,7 @@ export const verifyEmailCode = async (req, res) => {
                 message: "User already verified",
             });
         }
-        if (user.pageState !== PageState.SendVerifiedEmailCode) {
+        if (user.pageState !== client_1.PageState.SendVerifiedEmailCode) {
             return res.status(404).json({
                 success: false,
                 message: "please verify your email",
@@ -322,10 +335,10 @@ export const verifyEmailCode = async (req, res) => {
                 message: "Invalid email code",
             });
         }
-        await prisma.user.update({
+        await prisma_config_1.prisma.user.update({
             where: { id: user.id },
             data: {
-                pageState: PageState.VerifiedEmail,
+                pageState: client_1.PageState.VerifiedEmail,
                 isVerified: true,
                 verificationCode: null,
                 verificationExpiry: null,
@@ -337,9 +350,10 @@ export const verifyEmailCode = async (req, res) => {
         });
     }
     catch (error) {
-        throw new AppError({
+        throw new AppError_util_1.AppError({
             fnc: "checkEmailCode",
             error,
         });
     }
 };
+exports.verifyEmailCode = verifyEmailCode;

@@ -1,16 +1,7 @@
-export class ShapeData {
-    division;
-    seat;
-    upazila;
-    id;
-    institute;
-    lab_type;
-    head;
-    mobile;
-    alt_mobile;
-    email;
-    lat;
-    long;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ShapeData = void 0;
+class ShapeData {
     constructor(data) {
         this.division = data.division;
         this.seat = data.seat;
@@ -26,3 +17,4 @@ export class ShapeData {
         this.long = data.long;
     }
 }
+exports.ShapeData = ShapeData;

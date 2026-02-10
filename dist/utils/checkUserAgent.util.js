@@ -1,9 +1,11 @@
-import { UAParser } from "ua-parser-js";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const ua_parser_js_1 = require("ua-parser-js");
 function checkUserAgent(req) {
     const userAgent = req.headers["user-agent"];
     if (!userAgent)
         return false;
-    const parser = new UAParser(userAgent);
+    const parser = new ua_parser_js_1.UAParser(userAgent);
     const result = parser.getResult();
     const browserName = result.browser?.name?.toLowerCase();
     const deviceType = result.device?.type; // "mobile" | "tablet" | undefined
@@ -12,4 +14,4 @@ function checkUserAgent(req) {
         !deviceType;
     return isBrowser;
 }
-export default checkUserAgent;
+exports.default = checkUserAgent;
