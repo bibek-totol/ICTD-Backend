@@ -206,3 +206,21 @@ model ictdl_labs {
   @@index([upazila], map: "idx_ictdl_upazila")
   @@index([institute], map: "idx_ictdl_institute")
 }
+
+model Complaint {
+  id           String   @id @default(uuid())
+  division     String
+  district     String
+  upazila      String
+  institute    String
+  deviceType   String
+  deviceStatus String
+  total        Int      @default(1)
+  status       String   @default("Pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([division])
+  @@index([district])
+  @@index([upazila])
+}

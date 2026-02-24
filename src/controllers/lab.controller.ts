@@ -325,3 +325,56 @@ export const updateLab = async (req: Request, res: Response) => {
     throw new AppError(errorObj);
   }
 };
+
+export const getAllLabsUnified = async (req: Request, res: Response) => {
+  try {
+    const labs = await prisma.labs.findMany({
+      select: {
+        id: true,
+        institute: true,
+        division: true,
+        upazila: true,
+      },
+    });
+
+    const ictdlLabs = await prisma.ictdl_labs.findMany({
+      select: {
+        id: true,
+        institute: true,
+        district: true,
+        upazila: true,
+      },
+    });
+
+    const unifiedLabs = [
+      ...labs.map((l) => ({
+        id: `lab-${l.id}`,
+        institute: l.institute || "",
+        division: l.division || "",
+        district: "", // SRD labs don't have district in current schema
+        upazila: l.upazila || "",
+        type: "SRD/SOF",
+      })),
+      ...ictdlLabs.map((l) => ({
+        id: `ictdl-${l.id}`,
+        institute: l.institute || "",
+        division: "", // ICTDL labs don't have division in current schema
+        district: l.district || "",
+        upazila: l.upazila || "",
+        type: "ICTDL",
+      })),
+    ];
+
+    return res.status(200).json({
+      success: true,
+      message: "Unified labs retrieved successfully",
+      data: unifiedLabs,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "getAllLabsUnified",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
