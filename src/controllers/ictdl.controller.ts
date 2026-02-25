@@ -239,13 +239,56 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
             success: true,
             message: "ICTDL filter options retrieved successfully",
             data: {
-                districts: districts.map(d => d.district),
-                upazilas: upazilas.map(u => u.upazila),
+                districts: districts.map((d: any) => d.district),
+                upazilas: upazilas.map((u: any) => u.upazila),
             },
         });
     } catch (error) {
         const errorObj: AppErrorPayload = {
             fnc: "getICTDLFilterOptions",
+            error,
+        };
+        throw new AppError(errorObj);
+    }
+};
+
+export const bulkICTDLInsert = async (req: Request, res: Response) => {
+    try {
+        const { labs } = req.body;
+
+        if (!Array.isArray(labs)) {
+            return res.status(400).json({
+                success: false,
+                message: "labs field must be an array",
+            });
+        }
+
+        const labsToInsert = labs.map((lab: any) => ({
+            district: lab.district,
+            upazila: lab.upazila,
+            institute: lab.institute,
+            head: lab.head,
+            mobile: String(lab.mobile),
+            email: lab.email || null,
+            lat: parseFloat(lab.lat) || 0,
+            long: parseFloat(lab.long) || 0,
+            labImages: [],
+            institutionImages: [],
+        }));
+
+        const result = await prisma.ictdl_labs.createMany({
+            data: labsToInsert,
+            skipDuplicates: true,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: `${result.count} ICTDL labs inserted successfully`,
+            data: result,
+        });
+    } catch (error) {
+        const errorObj: AppErrorPayload = {
+            fnc: "bulkICTDLInsert",
             error,
         };
         throw new AppError(errorObj);

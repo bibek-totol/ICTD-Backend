@@ -208,19 +208,27 @@ model ictdl_labs {
 }
 
 model Complaint {
-  id           String   @id @default(uuid())
-  division     String
-  district     String
-  upazila      String
-  institute    String
-  deviceType   String
-  deviceStatus String
-  total        Int      @default(1)
-  status       String   @default("Pending")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(uuid())
+  division         String
+  district         String
+  upazila          String
+  institute        String
+  category         String    // e.g., Infrastructure, Personnel, Equipment, Other
+  subject          String
+  description      String
+  priority         String    @default("Medium") // Low, Medium, High, Urgent
+  complainantName  String?
+  complainantPhone String?
+  complaintImages  String[]  @default([]) // Cloudinary URLs
+  status           String    @default("Pending") // Pending, In Progress, Resolved, Rejected
+  resolutionNotes  String?
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([division])
   @@index([district])
   @@index([upazila])
+  @@index([category])
+  @@index([status])
 }

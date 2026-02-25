@@ -4,6 +4,7 @@ import {
     getICTDLabById,
     updateICTDLab,
     getICTDLFilterOptions,
+    bulkICTDLInsert,
 } from "../controllers/ictdl.controller";
 import { labUpload } from "../configs/labMulter.config";
 
@@ -21,6 +22,7 @@ router.put(
     ]),
     updateICTDLab
 );
+router.post("/add/bulk", bulkICTDLInsert);
 
 
 export default router;

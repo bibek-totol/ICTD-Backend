@@ -6,11 +6,13 @@ import {
     deleteComplaint,
 } from "../controllers/complaint.controller";
 
+import { complaintUpload } from "../configs/complaintMulter.config";
+
 const router = express.Router();
 
-router.post("/", createComplaint);
+router.post("/", complaintUpload.array("complaintImages", 5), createComplaint);
 router.get("/", getComplaints);
-router.put("/:id", updateComplaint);
+router.put("/:id", complaintUpload.array("complaintImages", 5), updateComplaint);
 router.delete("/:id", deleteComplaint);
 
 export default router;
