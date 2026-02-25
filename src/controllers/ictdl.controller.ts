@@ -8,11 +8,15 @@ import cloudinary from "../configs/cloudinary.config";
 
 export const getICTDLLabs = async (req: Request, res: Response) => {
     try {
-        const { district, upazila, search, page = "1", limit = "25" } = req.query;
+        const { division, district, upazila, search, page = "1", limit = "25" } = req.query;
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
         const take = parseInt(limit as string);
 
         const whereClause: any = {};
+
+        if (division && division !== "All") {
+            whereClause.division = division as string;
+        }
 
         if (district && district !== "All") {
             whereClause.district = district as string;
@@ -28,6 +32,8 @@ export const getICTDLLabs = async (req: Request, res: Response) => {
                 { head: { contains: search as string, mode: "insensitive" } },
                 { email: { contains: search as string, mode: "insensitive" } },
                 { mobile: { contains: search as string, mode: "insensitive" } },
+                { division: { contains: search as string, mode: "insensitive" } },
+                { district: { contains: search as string, mode: "insensitive" } },
             ];
         }
 
@@ -96,7 +102,7 @@ export const getICTDLabById = async (req: Request, res: Response) => {
 export const updateICTDLab = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { head, email, mobile, lat, long, deletedImages } = req.body;
+        const { division, district, upazila, head, email, mobile, lat, long, deletedImages } = req.body;
         const files = (req as any).files;
 
         const labId = parseInt(id as string);
@@ -153,6 +159,9 @@ export const updateICTDLab = async (req: Request, res: Response) => {
         const institutionImages = getImages('institutionImages');
 
         const updateData: any = {};
+        if (division !== undefined) updateData.division = division;
+        if (district !== undefined) updateData.district = district;
+        if (upazila !== undefined) updateData.upazila = upazila;
         if (head !== undefined) updateData.head = head;
         if (email !== undefined) updateData.email = email;
         if (mobile !== undefined) updateData.mobile = mobile;
@@ -223,6 +232,13 @@ export const updateICTDLab = async (req: Request, res: Response) => {
 
 export const getICTDLFilterOptions = async (req: Request, res: Response) => {
     try {
+        const divisions = await prisma.ictdl_labs.findMany({
+            distinct: ["division"],
+            select: { division: true },
+            where: { division: { not: null } },
+            orderBy: { division: "asc" },
+        });
+
         const districts = await prisma.ictdl_labs.findMany({
             distinct: ["district"],
             select: { district: true },
@@ -239,6 +255,7 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
             success: true,
             message: "ICTDL filter options retrieved successfully",
             data: {
+                divisions: divisions.map((d: any) => d.division).filter(Boolean),
                 districts: districts.map((d: any) => d.district),
                 upazilas: upazilas.map((u: any) => u.upazila),
             },
@@ -264,6 +281,7 @@ export const bulkICTDLInsert = async (req: Request, res: Response) => {
         }
 
         const labsToInsert = labs.map((lab: any) => ({
+            division: lab.division || null,
             district: lab.district,
             upazila: lab.upazila,
             institute: lab.institute,

@@ -10,6 +10,7 @@ export interface NestedUser {
 export interface OutputStructure {
   id: number;
   division: string | null;
+  district: string | null;
   seat: string | null;
   upazila: string | null;
   institute: string | null;
@@ -21,6 +22,7 @@ export interface OutputStructure {
 
 export class ShapeData {
   division: string | null;
+  district: string | null;
   seat: string | null;
   upazila: string | null;
   id: number;
@@ -35,6 +37,7 @@ export class ShapeData {
 
   constructor(data: OutputStructure) {
     this.division = data.division;
+    this.district = data.district;
     this.seat = data.seat;
     this.upazila = data.upazila;
     this.id = data.id;

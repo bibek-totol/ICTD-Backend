@@ -136,6 +136,7 @@ enum LabTypes {
 model labs {
   id                 Int        @id @default(autoincrement())
   division           String?    @db.VarChar(255)
+  district           String?    @db.VarChar(255)
   seat               String?    @db.VarChar(255)
   upazila            String?    @db.VarChar(255)
   institute          String?    @db.VarChar(255)
@@ -151,6 +152,7 @@ model labs {
   institutionImages  String[]   @default([])
 
   @@index([division], map: "idx_labs_division")
+  @@index([district], map: "idx_labs_district")
   @@index([lab_type], map: "idx_labs_lab_type")
   @@index([upazila], map: "idx_labs_upazila")
   @@index([userId])
@@ -184,6 +186,7 @@ model LabReport {
 
 model ictdl_labs {
   id                 Int      @id @default(autoincrement())
+  division           String?  @db.VarChar(255)
   district           String   @db.VarChar(255)
   upazila            String   @db.VarChar(255)
   institute          String   @db.VarChar(500)
@@ -202,6 +205,7 @@ model ictdl_labs {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  @@index([division], map: "idx_ictdl_division")
   @@index([district], map: "idx_ictdl_district")
   @@index([upazila], map: "idx_ictdl_upazila")
   @@index([institute], map: "idx_ictdl_institute")

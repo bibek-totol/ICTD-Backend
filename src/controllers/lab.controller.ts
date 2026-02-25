@@ -14,6 +14,7 @@ const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
   institute: lab.institute,
   division: lab.division,
+  district: lab.district,
   upazila: lab.upazila,
   seat: lab.seat,
   head: lab.user?.userName ?? lab.head,
@@ -29,12 +30,16 @@ const mapLabToFrontend = (lab: any) => ({
 
 export const getLabs = async (req: Request, res: Response) => {
   try {
-    const { division, upazila, labType, search } = req.query;
+    const { division, district, upazila, labType, search } = req.query;
 
     const whereClause: any = {};
 
     if (division && division !== "All") {
       whereClause.division = division as string;
+    }
+
+    if (district && district !== "All") {
+      whereClause.district = district as string;
     }
 
     if (upazila && upazila !== "All") {
@@ -52,6 +57,7 @@ export const getLabs = async (req: Request, res: Response) => {
         { user: { email: { contains: search as string, mode: "insensitive" } } },
         { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
         { division: { contains: search as string, mode: "insensitive" } },
+        { district: { contains: search as string, mode: "insensitive" } },
       ];
     }
 
@@ -141,6 +147,13 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       orderBy: { division: "asc" },
     });
 
+    const districts = await prisma.labs.findMany({
+      distinct: ["district"],
+      select: { district: true },
+      where: { district: { not: null } },
+      orderBy: { district: "asc" },
+    });
+
     const upazilas = await prisma.labs.findMany({
       distinct: ["upazila"],
       select: { upazila: true },
@@ -160,6 +173,7 @@ export const getFilterOptions = async (req: Request, res: Response) => {
       message: "Filter options retrieved successfully",
       data: {
         divisions: divisions.map((d) => d.division).filter(Boolean),
+        districts: districts.map((d) => d.district).filter(Boolean),
         upazilas: upazilas.map((u) => u.upazila).filter(Boolean),
         labTypes: labTypes.map((l) => l.lab_type).filter(Boolean),
       },
@@ -176,7 +190,7 @@ export const getFilterOptions = async (req: Request, res: Response) => {
 export const updateLab = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { head, email, mobile, alt_mobile, lat, long, deletedImages } = req.body;
+    const { division, district, upazila, seat, head, email, mobile, alt_mobile, lat, long, deletedImages } = req.body;
     const files = (req as any).files;
 
     const labId = parseInt(id as string);
@@ -288,6 +302,10 @@ export const updateLab = async (req: Request, res: Response) => {
 
       // 2. Update Lab record
       const labUpdateData: any = {};
+      if (division !== undefined) labUpdateData.division = division;
+      if (district !== undefined) labUpdateData.district = district;
+      if (upazila !== undefined) labUpdateData.upazila = upazila;
+      if (seat !== undefined) labUpdateData.seat = seat;
       if (lat !== undefined) labUpdateData.lat = lat.toString();
       if (long !== undefined) labUpdateData.long = long.toString();
       if (labImages !== undefined) labUpdateData.labImages = labImages;
@@ -333,6 +351,7 @@ export const getAllLabsUnified = async (req: Request, res: Response) => {
         id: true,
         institute: true,
         division: true,
+        district: true,
         upazila: true,
       },
     });
@@ -341,6 +360,7 @@ export const getAllLabsUnified = async (req: Request, res: Response) => {
       select: {
         id: true,
         institute: true,
+        division: true,
         district: true,
         upazila: true,
       },
@@ -351,14 +371,14 @@ export const getAllLabsUnified = async (req: Request, res: Response) => {
         id: `lab-${l.id}`,
         institute: l.institute || "",
         division: l.division || "",
-        district: "", // SRD labs don't have district in current schema
+        district: l.district || "",
         upazila: l.upazila || "",
         type: "SRD/SOF",
       })),
       ...ictdlLabs.map((l) => ({
         id: `ictdl-${l.id}`,
         institute: l.institute || "",
-        division: "", // ICTDL labs don't have division in current schema
+        division: l.division || "",
         district: l.district || "",
         upazila: l.upazila || "",
         type: "ICTDL",
