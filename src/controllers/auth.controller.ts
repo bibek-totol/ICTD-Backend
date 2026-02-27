@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../configs/prisma.config";
 import bcrypt from "bcryptjs";
-import { assignJwtToken } from "../utils/jwt.util";
+import { assignJwtToken, deleteJwtToken } from "../utils/jwt.util";
 import { CookiesAuthPayLoad } from "../interfaces_and_types/CookiesPayLoad.interface";
 import { ReqTypeEnum } from "../interfaces_and_types/ReqType.enum";
 import { AppError } from "../utils/AppError.util";
@@ -481,5 +481,16 @@ export const getMe = async (req: any, res: Response) => {
     });
   } catch (error: any) {
     throw new AppError({ fnc: "getMe", error });
+  }
+};
+export const logout = async (req: Request, res: Response) => {
+  try {
+    deleteJwtToken(req, res);
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error: any) {
+    throw new AppError({ fnc: "logout", error });
   }
 };

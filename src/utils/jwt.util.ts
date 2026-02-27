@@ -66,33 +66,25 @@ export function assignJwtToken(req: Request, res: Response, payload: object) {
   }
 }
 
-export function deleteJwtToken(req: Request, res: Response, payload: object) {
-  const { ReqType } = req.body;
+export function deleteJwtToken(req: Request, res: Response) {
+  try {
+    const isBrowser = checkUserAgent(req);
 
-  const isBrowser = checkUserAgent(req);
+    if (isBrowser) {
+      res.cookie("token", "", deleteCookieOptions);
+    }
 
-  // check ReqType === "mobileApps" || !isBrowser ---> then it is mobileApplication
-  // else ---> it is webApplication
-
-  const token = generateJwtToken(payload);
-
-  if (ReqType === ReqTypeEnum.MobileApp && !isBrowser) {
-    // return bearer token for mobile, postman, APIs
     return {
-      type: "Bearer",
-      token,
-      message: "Token assigned via bearer",
+      success: true,
+      message: "Token cleared successfully",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message,
+      error,
     };
   }
-
-  // when it is web
-  res.cookie("token", token, assignCookieOptions);
-
-  return {
-    type: "cookie",
-    token: null, // browser doesn't need returned token
-    message: "Token assigned via cookies",
-  };
 }
 
 export function verifyJwtToken(token: string) {

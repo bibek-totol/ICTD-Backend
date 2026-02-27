@@ -11,7 +11,11 @@ import { labUpload } from "../configs/labMulter.config";
 // import authorizeMiddleware from "../middlewares/role.m";
 // import authenticateMiddleware from "../middlewares/auth.m";
 
+import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
+
 const router = express.Router();
+
+router.use(AuthorizationMiddleware); // Protect all lab routes
 
 // router.get("/", newGetLabs);
 router.get("/", getLabs);

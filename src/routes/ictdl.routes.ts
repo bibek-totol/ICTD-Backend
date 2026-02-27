@@ -8,8 +8,11 @@ import {
 } from "../controllers/ictdl.controller";
 import { labUpload } from "../configs/labMulter.config";
 
+import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
+
 const router = express.Router();
 
+router.use(AuthorizationMiddleware);
 
 router.get("/", getICTDLLabs);
 router.get("/filter-options", getICTDLFilterOptions);

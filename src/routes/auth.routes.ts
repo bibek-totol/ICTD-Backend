@@ -14,5 +14,5 @@ router.post("/verify/code", Auth.verifyEmailCode);
 
 // Protected route: get current user profile
 router.get("/me", AuthorizationMiddleware, Auth.getMe);
-
+router.post("/logout", Auth.logout);
 export default router;

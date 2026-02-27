@@ -3,23 +3,35 @@ import { prisma } from "../configs/prisma.config";
 import { AppError } from "../utils/AppError.util";
 import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
 import cloudinary from "../configs/cloudinary.config";
-
-
+import AppRequest from "../interfaces_and_types/AppRequest.interface";
 
 export const getICTDLLabs = async (req: Request, res: Response) => {
     try {
         const { division, district, upazila, search, page = "1", limit = "25" } = req.query;
         const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
         const take = parseInt(limit as string);
+        const user = (req as AppRequest).user;
 
         const whereClause: any = {};
 
+        // Jurisdiction Enforce
+        if (user?.role !== "SuperAdmin") {
+            if (user?.division) whereClause.division = user.division;
+            if (user?.district) whereClause.district = user.district;
+            if (user?.upazila) whereClause.upazila = user.upazila;
+        }
+
+        // Override with query params ONLY if user is SuperAdmin or within their range
         if (division && division !== "All") {
-            whereClause.division = division as string;
+            if (user?.role === "SuperAdmin" || user?.division === division) {
+                whereClause.division = division as string;
+            }
         }
 
         if (district && district !== "All") {
-            whereClause.district = district as string;
+            if (user?.role === "SuperAdmin" || user?.role === "DivisionAdmin" || user?.district === district) {
+                whereClause.district = district as string;
+            }
         }
 
         if (upazila && upazila !== "All") {
@@ -85,6 +97,17 @@ export const getICTDLabById = async (req: Request, res: Response) => {
             });
         }
 
+        // Jurisdiction Check
+        const userAuth = (req as AppRequest).user;
+        if (userAuth?.role !== "SuperAdmin") {
+            if (userAuth?.division && lab.division !== userAuth.division) {
+                return res.status(403).json({ success: false, message: "Access denied" });
+            }
+            if (userAuth?.district && lab.district !== userAuth.district) {
+                return res.status(403).json({ success: false, message: "Access denied" });
+            }
+        }
+
         return res.status(200).json({
             success: true,
             message: "ICTDL lab retrieved successfully",
@@ -117,6 +140,17 @@ export const updateICTDLab = async (req: Request, res: Response) => {
                 success: false,
                 message: "ICTDL lab not found",
             });
+        }
+
+        // Jurisdiction Check
+        const userAuth = (req as AppRequest).user;
+        if (userAuth?.role !== "SuperAdmin") {
+            if (userAuth?.division && lab.division !== userAuth.division) {
+                return res.status(403).json({ success: false, message: "Unauthorized" });
+            }
+            if (userAuth?.district && lab.district !== userAuth.district) {
+                return res.status(403).json({ success: false, message: "Unauthorized" });
+            }
         }
 
         // Helper to consolidate images
@@ -228,26 +262,35 @@ export const updateICTDLab = async (req: Request, res: Response) => {
     }
 };
 
-
-
 export const getICTDLFilterOptions = async (req: Request, res: Response) => {
     try {
+        const user = (req as AppRequest).user;
+        const where: any = {};
+
+        if (user?.role !== "SuperAdmin") {
+            if (user?.division) where.division = user.division;
+            if (user?.district) where.district = user.district;
+            if (user?.upazila) where.upazila = user.upazila;
+        }
+
         const divisions = await prisma.ictdl_labs.findMany({
             distinct: ["division"],
             select: { division: true },
-            where: { division: { not: null } },
+            where: { ...where, division: { not: null } },
             orderBy: { division: "asc" },
         });
 
         const districts = await prisma.ictdl_labs.findMany({
             distinct: ["district"],
             select: { district: true },
+            where: { ...where, district: { not: null } },
             orderBy: { district: "asc" },
         });
 
         const upazilas = await prisma.ictdl_labs.findMany({
             distinct: ["upazila"],
             select: { upazila: true },
+            where: { ...where, upazila: { not: null } },
             orderBy: { upazila: "asc" },
         });
 
@@ -256,8 +299,8 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
             message: "ICTDL filter options retrieved successfully",
             data: {
                 divisions: divisions.map((d: any) => d.division).filter(Boolean),
-                districts: districts.map((d: any) => d.district),
-                upazilas: upazilas.map((u: any) => u.upazila),
+                districts: districts.map((d: any) => d.district).filter(Boolean),
+                upazilas: upazilas.map((u: any) => u.upazila).filter(Boolean),
             },
         });
     } catch (error) {
@@ -271,7 +314,7 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
 
 export const bulkICTDLInsert = async (req: Request, res: Response) => {
     try {
-        const { labs } = req.body;
+        const { labs } = req.body as any;
 
         if (!Array.isArray(labs)) {
             return res.status(400).json({

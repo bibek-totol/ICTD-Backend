@@ -3,12 +3,8 @@ import { prisma } from "../configs/prisma.config";
 import { AppError } from "../utils/AppError.util";
 import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
 import { LabTypes } from "@prisma/client";
-import {
-  OutputStructure,
-  NestedUser,
-  ShapeData,
-} from "../interfaces_and_types/labs.interface";
 import cloudinary from "../configs/cloudinary.config";
+import AppRequest from "../interfaces_and_types/AppRequest.interface";
 
 const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
@@ -28,18 +24,33 @@ const mapLabToFrontend = (lab: any) => ({
   institutionImages: lab.institutionImages ?? [],
 });
 
-export const getLabs = async (req: Request, res: Response) => {
+export const getLabs = async (req: AppRequest, res: Response) => {
   try {
     const { division, district, upazila, labType, search } = req.query;
+    const user = req.user;
 
     const whereClause: any = {};
 
+    // Jurisdiction Enforce
+    if (user?.role !== "SuperAdmin") {
+      if (user?.division) whereClause.division = user.division;
+      if (user?.district) whereClause.district = user.district;
+      if (user?.upazila) whereClause.upazila = user.upazila;
+    }
+
+    // Override with query params ONLY if user is SuperAdmin or if they are within their jurisdiction
     if (division && division !== "All") {
-      whereClause.division = division as string;
+      if (user?.role === "SuperAdmin" || user?.division === division) {
+        whereClause.division = division as string;
+      }
     }
 
     if (district && district !== "All") {
-      whereClause.district = district as string;
+      if (user?.role === "SuperAdmin" || user?.role === "DivisionAdmin" || user?.district === district) {
+        // For DivisionAdmin, we should ensure the district belongs to their division
+        // But the database query handles that if whereClause.division is already set
+        whereClause.district = district as string;
+      }
     }
 
     if (upazila && upazila !== "All") {
@@ -95,7 +106,7 @@ export const getLabs = async (req: Request, res: Response) => {
   }
 };
 
-export const getLabById = async (req: Request, res: Response) => {
+export const getLabById = async (req: AppRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -122,6 +133,20 @@ export const getLabById = async (req: Request, res: Response) => {
       });
     }
 
+    // Jurisdiction Check
+    const userAuth = req.user;
+    if (userAuth?.role !== "SuperAdmin") {
+      if (userAuth?.division && lab.division !== userAuth.division) {
+        return res.status(403).json({ success: false, message: "Access denied: outside your division" });
+      }
+      if (userAuth?.district && lab.district !== userAuth.district) {
+        return res.status(403).json({ success: false, message: "Access denied: outside your district" });
+      }
+      if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
+        return res.status(403).json({ success: false, message: "Access denied: outside your upazila" });
+      }
+    }
+
     const mappedLab = mapLabToFrontend(lab);
 
     return res.status(200).json({
@@ -138,33 +163,42 @@ export const getLabById = async (req: Request, res: Response) => {
   }
 };
 
-export const getFilterOptions = async (req: Request, res: Response) => {
+export const getFilterOptions = async (req: AppRequest, res: Response) => {
   try {
+    const user = req.user;
+    const where: any = {};
+
+    if (user?.role !== "SuperAdmin") {
+      if (user?.division) where.division = user.division;
+      if (user?.district) where.district = user.district;
+      if (user?.upazila) where.upazila = user.upazila;
+    }
+
     const divisions = await prisma.labs.findMany({
       distinct: ["division"],
       select: { division: true },
-      where: { division: { not: null } },
+      where: { ...where, division: { not: null } },
       orderBy: { division: "asc" },
     });
 
     const districts = await prisma.labs.findMany({
       distinct: ["district"],
       select: { district: true },
-      where: { district: { not: null } },
+      where: { ...where, district: { not: null } },
       orderBy: { district: "asc" },
     });
 
     const upazilas = await prisma.labs.findMany({
       distinct: ["upazila"],
       select: { upazila: true },
-      where: { upazila: { not: null } },
+      where: { ...where, upazila: { not: null } },
       orderBy: { upazila: "asc" },
     });
 
     const labTypes = await prisma.labs.findMany({
       distinct: ["lab_type"],
       select: { lab_type: true },
-      where: { lab_type: { not: null } },
+      where: { ...where, lab_type: { not: null } },
       orderBy: { lab_type: "asc" },
     });
 
@@ -206,6 +240,17 @@ export const updateLab = async (req: Request, res: Response) => {
         success: false,
         message: "Lab not found",
       });
+    }
+
+    // Jurisdiction Check
+    const userAuth = (req as any).user;
+    if (userAuth?.role !== "SuperAdmin") {
+      if (userAuth?.division && lab.division !== userAuth.division) {
+        return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+      }
+      if (userAuth?.district && lab.district !== userAuth.district) {
+        return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+      }
     }
 
     // Helper to consolidate images (exact logic from ictdl.controller.ts)
@@ -344,9 +389,19 @@ export const updateLab = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllLabsUnified = async (req: Request, res: Response) => {
+export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
   try {
+    const userAuth = req.user;
+    const where: any = {};
+
+    if (userAuth?.role !== "SuperAdmin") {
+      if (userAuth?.division) where.division = userAuth.division;
+      if (userAuth?.district) where.district = userAuth.district;
+      if (userAuth?.upazila) where.upazila = userAuth.upazila;
+    }
+
     const labs = await prisma.labs.findMany({
+      where,
       select: {
         id: true,
         institute: true,
@@ -357,6 +412,7 @@ export const getAllLabsUnified = async (req: Request, res: Response) => {
     });
 
     const ictdlLabs = await prisma.ictdl_labs.findMany({
+      where,
       select: {
         id: true,
         institute: true,
