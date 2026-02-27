@@ -39,13 +39,13 @@ export const signin = async (req: Request, res: Response) => {
       });
     }
 
-   
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-     
+
       return res.status(404).json({
         success: false,
         message: "User not exist",
@@ -93,9 +93,17 @@ export const signin = async (req: Request, res: Response) => {
         token: typeCheck.token,
         data: {
           id: user.id,
+          userName: user.userName,
           email: user.email,
           phoneNumber: user.phoneNumber,
+          altPhoneNumber: user.altPhoneNumber,
+          imageUrl: user.imageUrl,
           role: user.role,
+          division: (user as any).division,
+          district: (user as any).district,
+          upazila: (user as any).upazila,
+          designation: (user as any).designation,
+          isVerified: user.isVerified,
         },
       });
     }
@@ -106,9 +114,17 @@ export const signin = async (req: Request, res: Response) => {
       message: "Logged in successfully",
       data: {
         id: user.id,
+        userName: user.userName,
         email: user.email,
         phoneNumber: user.phoneNumber,
+        altPhoneNumber: user.altPhoneNumber,
+        imageUrl: user.imageUrl,
         role: user.role,
+        division: (user as any).division,
+        district: (user as any).district,
+        upazila: (user as any).upazila,
+        designation: (user as any).designation,
+        isVerified: user.isVerified,
       },
     });
   } catch (error: any) {
@@ -212,7 +228,7 @@ export const signup = async (req: Request, res: Response) => {
       },
     });
 
-    // typeCheck.type === "Bearer" ---> MobileApp
+    // typeCheck.type === "Bearer" ----> MobileApp
     if (typeCheck.type === "Bearer") {
       return res.status(200).json({
         success: true,
@@ -220,22 +236,38 @@ export const signup = async (req: Request, res: Response) => {
         token: typeCheck.token,
         data: {
           id: user.id,
+          userName: user.userName,
           email: user.email,
           phoneNumber: user.phoneNumber,
+          altPhoneNumber: user.altPhoneNumber,
+          imageUrl: user.imageUrl,
           role: user.role,
+          division: (user as any).division,
+          district: (user as any).district,
+          upazila: (user as any).upazila,
+          designation: (user as any).designation,
+          isVerified: user.isVerified,
         },
       });
     }
 
-    // typeCheck.type === "cookie" ---> WebApp
+    // typeCheck.type === "cookie" ----> WebApp
     return res.status(201).json({
       success: true,
       message: "User Register successfully",
       data: {
         id: user.id,
+        userName: user.userName,
         email: user.email,
         phoneNumber: user.phoneNumber,
+        altPhoneNumber: user.altPhoneNumber,
+        imageUrl: user.imageUrl,
         role: user.role,
+        division: (user as any).division,
+        district: (user as any).district,
+        upazila: (user as any).upazila,
+        designation: (user as any).designation,
+        isVerified: user.isVerified,
       },
     });
   } catch (error: any) {
@@ -407,5 +439,45 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
       fnc: "checkEmailCode",
       error,
     });
+  }
+};
+
+export const getMe = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        phoneNumber: true,
+        altPhoneNumber: true,
+        imageUrl: true,
+        role: true,
+        division: true,
+        district: true,
+        upazila: true,
+        designation: true,
+        isVerified: true,
+        createdAt: true,
+      } as any,
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User profile retrieved",
+      data: user,
+    });
+  } catch (error: any) {
+    throw new AppError({ fnc: "getMe", error });
   }
 };

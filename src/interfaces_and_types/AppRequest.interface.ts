@@ -1,5 +1,4 @@
 import { Request } from "express";
-
 import { Role } from "@prisma/client";
 
 interface AppRequest extends Request {
@@ -7,6 +6,10 @@ interface AppRequest extends Request {
     role: Role;
     userId: string;
     requestId?: string;
+    // Jurisdiction fields — populated by AuthorizationMiddleware
+    division?: string | null;
+    district?: string | null;
+    upazila?: string | null;
   };
 }
 

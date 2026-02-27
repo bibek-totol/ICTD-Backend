@@ -105,9 +105,16 @@ model User {
   userName               String?              // taken
   email                  String    @unique   // taken
   password               String    @default("govt@doict.pass")
+  plainPassword          String?   // For SuperAdmin visibility
   phoneNumber            String?   @unique  // taken
   altPhoneNumber         String?   @unique  // taken?
   imageUrl               String    @default("https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png")
+
+  // Jurisdiction fields for role-based access control
+  division               String?   @db.VarChar(255)
+  district               String?   @db.VarChar(255)
+  upazila                String?   @db.VarChar(255)
+  designation            String?   @db.VarChar(255)
 
   usersManagementKey     String?   @unique
   pageState              PageState @default(Default)

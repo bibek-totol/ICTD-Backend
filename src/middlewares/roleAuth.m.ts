@@ -67,6 +67,10 @@ export const AuthorizationMiddleware = async (
       ...req.user,
       role: decoded.role,
       userId: decoded.id,
+      // Attach jurisdiction so controllers can enforce role-based data scoping
+      division: (user as any).division ?? null,
+      district: (user as any).district ?? null,
+      upazila: (user as any).upazila ?? null,
     };
 
     console.log("req.user ==> ", req.user);

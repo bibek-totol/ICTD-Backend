@@ -5,10 +5,13 @@ import {
     updateComplaint,
     deleteComplaint,
 } from "../controllers/complaint.controller";
-
 import { complaintUpload } from "../configs/complaintMulter.config";
+import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
 
 const router = express.Router();
+
+// All complaint routes require authentication
+router.use(AuthorizationMiddleware);
 
 router.post("/", complaintUpload.array("complaintImages", 5), createComplaint);
 router.get("/", getComplaints);
