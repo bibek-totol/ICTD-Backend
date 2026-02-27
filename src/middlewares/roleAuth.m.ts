@@ -24,7 +24,8 @@ export const AuthorizationMiddleware = async (
   try {
     let token = req.cookies?.token;
 
-    // Fallback to Authorization header if cookie is missing
+    // Logic: Try cookie first. If no cookie OR if we want to support both simultaneously, check header.
+    // In cross-site Vercel, cookies are often blocked, so the Header is the most reliable fallback.
     if (!token && req.headers.authorization?.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
     }
@@ -32,14 +33,31 @@ export const AuthorizationMiddleware = async (
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized: Token missing",
+        message: "Unauthorized: Access token missing. Please sign in.",
       });
     }
 
-    const decoded = jwt.verify(token, config.jwt_secret) as JwtPayload & {
-      id?: string;
-      role?: Role;
-    };
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, config.jwt_secret);
+    } catch (err) {
+      // If cookie failed, try the Authorization header one more time as a last resort
+      if (req.headers.authorization?.startsWith("Bearer ")) {
+        const headerToken = req.headers.authorization.split(" ")[1];
+        if (headerToken !== token) {
+          try {
+            decoded = jwt.verify(headerToken, config.jwt_secret);
+            token = headerToken; // Update token to the valid one
+          } catch (secondErr) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Invalid token" });
+          }
+        } else {
+          return res.status(401).json({ success: false, message: "Unauthorized: Token expired or invalid" });
+        }
+      } else {
+        return res.status(401).json({ success: false, message: "Unauthorized: Token expired or invalid" });
+      }
+    }
 
     console.log("decoded ==> ", decoded);
 

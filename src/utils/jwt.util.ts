@@ -52,7 +52,7 @@ export function assignJwtToken(req: Request, res: Response, payload: object) {
     return {
       success: true,
       type: "cookie",
-      token: null, // browser doesn't need returned token
+      token, // Return token so frontend can use it in headers as backup
       message: "Token assigned via cookies",
     };
   } catch (error: any) {

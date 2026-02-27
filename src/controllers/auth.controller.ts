@@ -112,6 +112,7 @@ export const signin = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "Logged in successfully",
+      token: typeCheck.token, // Include token for local persistence/headers
       data: {
         id: user.id,
         userName: user.userName,
@@ -255,6 +256,7 @@ export const signup = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       message: "User Register successfully",
+      token: typeCheck.token, // Include token for local persistence/headers
       data: {
         id: user.id,
         userName: user.userName,
