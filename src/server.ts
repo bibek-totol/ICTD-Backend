@@ -24,18 +24,28 @@ const clientPort3 = 5175;
 app.set("etag", false);
 app.set("trust proxy", true);
 
+const allowedOrigins = [
+  config.base_url,
+  `http://localhost:${clientPort1}`,
+  `http://localhost:${clientPort2}`,
+  `http://localhost:${clientPort3}`,
+  `https://ictd-lab-gsi-project.vercel.app`,
+  `https://ictd-lab-gsi-project-frontend.vercel.app`
+];
+
 app.use(
   cors({
-    origin: [
-      config.base_url,
-      `http://localhost:${clientPort1}`,
-      `http://localhost:${clientPort2}`,
-      `http://localhost:${clientPort3}`,
-      `https://ictd-lab-gsi-project.vercel.app`,
-      `https://ictd-lab-gsi-project-frontend.vercel.app`
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     credentials: true,
   }),
 );
