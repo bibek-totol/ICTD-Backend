@@ -10,11 +10,11 @@ const roleAuth_m_1 = require("../middlewares/roleAuth.m");
 const router = express_1.default.Router();
 // Bulk insert is public for migration
 router.post("/add/bulk", lab_controller_js_1.bulkLabInsert);
-// All other routes are protected
-router.use(roleAuth_m_1.AuthorizationMiddleware);
 router.get("/", lab_controller_js_1.getLabs);
 router.get("/filter-options", lab_controller_js_1.getFilterOptions);
 router.get("/unified-labs", lab_controller_js_1.getAllLabsUnified);
 router.get("/:id", lab_controller_js_1.getLabById);
+// All other routes are protected
+router.use(roleAuth_m_1.AuthorizationMiddleware);
 router.put("/update/:id", labMulter_config_1.labUpload.fields([{ name: 'labImages', maxCount: 2 }, { name: 'institutionImages', maxCount: 2 }]), lab_controller_js_1.updateLab);
 exports.default = router;

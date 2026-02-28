@@ -15,12 +15,13 @@ const router = express.Router();
 // Bulk insert is public for migration
 router.post("/add/bulk", bulkICTDLInsert);
 
-// All other routes are protected
-router.use(AuthorizationMiddleware);
-
 router.get("/", getICTDLLabs);
 router.get("/filter-options", getICTDLFilterOptions);
 router.get("/:id", getICTDLabById);
+
+// All other routes are protected
+router.use(AuthorizationMiddleware);
+
 router.put(
     "/update/:id",
     labUpload.fields([
