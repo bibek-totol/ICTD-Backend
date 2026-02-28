@@ -393,7 +393,7 @@ export const updateLab = async (req: Request, res: Response) => {
       if (mobile !== undefined) userUpdateData.phoneNumber = mobile;
       if (alt_mobile !== undefined) userUpdateData.altPhoneNumber = alt_mobile;
 
-      if (Object.keys(userUpdateData).length > 0) {
+      if (Object.keys(userUpdateData).length > 0 && lab.userId) {
         await tx.user.update({
           where: { id: lab.userId },
           data: userUpdateData,
@@ -411,8 +411,8 @@ export const updateLab = async (req: Request, res: Response) => {
       }
 
       if (seat !== undefined) labUpdateData.seat = seat;
-      if (lat !== undefined) labUpdateData.lat = lat.toString();
-      if (long !== undefined) labUpdateData.long = long.toString();
+      if (lat !== undefined) labUpdateData.lat = parseFloat(lat);
+      if (long !== undefined) labUpdateData.long = parseFloat(long);
       if (labImages !== undefined) labUpdateData.labImages = labImages;
       if (institutionImages !== undefined) labUpdateData.institutionImages = institutionImages;
 

@@ -215,8 +215,8 @@ router.post("/add/labs", async (req: Request, res: Response) => {
         institute?: string;
         lab_type?: LabTypes;
         userId: string;
-        lat?: string;
-        long?: any;
+        lat?: number;
+        long?: number;
       } = { userId: "" };
 
       if (!user.id) break;
@@ -228,8 +228,8 @@ router.post("/add/labs", async (req: Request, res: Response) => {
       if (lab?.upazila) insertData.upazila = lab.upazila;
       if (lab?.institute) insertData.institute = lab.institute;
       if (lab?.lab_type) insertData.lab_type = lab.lab_type;
-      if (lab?.lat) insertData.lat = lab.lat;
-      if (lab?.long) insertData.long = lab.long;
+      if (lab?.lat) insertData.lat = parseFloat(lab.lat);
+      if (lab?.long) insertData.long = parseFloat(lab.long);
 
       const createLab = await prisma.labs.create({ data: insertData });
     }

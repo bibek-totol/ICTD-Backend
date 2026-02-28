@@ -38,9 +38,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const Auth = __importStar(require("../controllers/auth.controller"));
+const roleAuth_m_1 = require("../middlewares/roleAuth.m");
 const router = express_1.default.Router();
 router.post("/signup", Auth.signup);
 router.post("/signin", Auth.signin);
 router.post("/verify/email", Auth.verifyEmail);
 router.post("/verify/code", Auth.verifyEmailCode);
+// Protected route: get current user profile
+router.get("/me", roleAuth_m_1.AuthorizationMiddleware, Auth.getMe);
+router.post("/logout", Auth.logout);
 exports.default = router;

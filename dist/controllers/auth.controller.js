@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmailCode = exports.verifyEmail = exports.signup = exports.signin = void 0;
+exports.logout = exports.getMe = exports.verifyEmailCode = exports.verifyEmail = exports.signup = exports.signin = void 0;
 const prisma_config_1 = require("../configs/prisma.config");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jwt_util_1 = require("../utils/jwt.util");
@@ -80,9 +80,17 @@ const signin = async (req, res) => {
                 token: typeCheck.token,
                 data: {
                     id: user.id,
+                    userName: user.userName,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
+                    altPhoneNumber: user.altPhoneNumber,
+                    imageUrl: user.imageUrl,
                     role: user.role,
+                    division: user.division,
+                    district: user.district,
+                    upazila: user.upazila,
+                    designation: user.designation,
+                    isVerified: user.isVerified,
                 },
             });
         }
@@ -90,11 +98,20 @@ const signin = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Logged in successfully",
+            token: typeCheck.token, // Include token for local persistence/headers
             data: {
                 id: user.id,
+                userName: user.userName,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
+                altPhoneNumber: user.altPhoneNumber,
+                imageUrl: user.imageUrl,
                 role: user.role,
+                division: user.division,
+                district: user.district,
+                upazila: user.upazila,
+                designation: user.designation,
+                isVerified: user.isVerified,
             },
         });
     }
@@ -184,7 +201,7 @@ const signup = async (req, res) => {
                 pageState: client_1.PageState.Registered,
             },
         });
-        // typeCheck.type === "Bearer" ---> MobileApp
+        // typeCheck.type === "Bearer" ----> MobileApp
         if (typeCheck.type === "Bearer") {
             return res.status(200).json({
                 success: true,
@@ -192,21 +209,38 @@ const signup = async (req, res) => {
                 token: typeCheck.token,
                 data: {
                     id: user.id,
+                    userName: user.userName,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
+                    altPhoneNumber: user.altPhoneNumber,
+                    imageUrl: user.imageUrl,
                     role: user.role,
+                    division: user.division,
+                    district: user.district,
+                    upazila: user.upazila,
+                    designation: user.designation,
+                    isVerified: user.isVerified,
                 },
             });
         }
-        // typeCheck.type === "cookie" ---> WebApp
+        // typeCheck.type === "cookie" ----> WebApp
         return res.status(201).json({
             success: true,
             message: "User Register successfully",
+            token: typeCheck.token, // Include token for local persistence/headers
             data: {
                 id: user.id,
+                userName: user.userName,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
+                altPhoneNumber: user.altPhoneNumber,
+                imageUrl: user.imageUrl,
                 role: user.role,
+                division: user.division,
+                district: user.district,
+                upazila: user.upazila,
+                designation: user.designation,
+                isVerified: user.isVerified,
             },
         });
     }
@@ -357,3 +391,54 @@ const verifyEmailCode = async (req, res) => {
     }
 };
 exports.verifyEmailCode = verifyEmailCode;
+const getMe = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const user = await prisma_config_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                userName: true,
+                email: true,
+                phoneNumber: true,
+                altPhoneNumber: true,
+                imageUrl: true,
+                role: true,
+                division: true,
+                district: true,
+                upazila: true,
+                designation: true,
+                isVerified: true,
+                createdAt: true,
+            },
+        });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "User profile retrieved",
+            data: user,
+        });
+    }
+    catch (error) {
+        throw new AppError_util_1.AppError({ fnc: "getMe", error });
+    }
+};
+exports.getMe = getMe;
+const logout = async (req, res) => {
+    try {
+        (0, jwt_util_1.deleteJwtToken)(req, res);
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully",
+        });
+    }
+    catch (error) {
+        throw new AppError_util_1.AppError({ fnc: "logout", error });
+    }
+};
+exports.logout = logout;

@@ -12,6 +12,8 @@ const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const lab_routes_1 = __importDefault(require("./routes/lab.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const labReport_routes_1 = __importDefault(require("./routes/labReport.routes"));
+const ictdl_routes_1 = __importDefault(require("./routes/ictdl.routes"));
+const complaint_routes_1 = __importDefault(require("./routes/complaint.routes"));
 // import authenticateMiddleware from "./middlewares/auth.m";
 const logger_m_1 = require("./middlewares/logger.m");
 const errorHandler_m_1 = require("./middlewares/errorHandler.m");
@@ -23,18 +25,29 @@ const clientPort2 = 5174;
 const clientPort3 = 5175;
 app.set("etag", false);
 app.set("trust proxy", true);
+const allowedOrigins = [
+    env_config_1.default.base_url,
+    `http://localhost:${clientPort1}`,
+    `http://localhost:${clientPort2}`,
+    `http://localhost:${clientPort3}`,
+    `https://ictd-lab-gsi-project.vercel.app`,
+    `https://ictd-lab-gsi-project-frontend.vercel.app`
+];
 app.use((0, cors_1.default)({
-    origin: [
-        env_config_1.default.base_url,
-        `http://localhost:${clientPort1}`,
-        `http://localhost:${clientPort2}`,
-        `http://localhost:${clientPort3}`,
-        `https://ictd-lab-gsi-project.vercel.app`,
-        `https://ictdlgov.vercel.app`,
-        `https://ictd-lab-gsi-project-frontend.vercel.app`
-    ],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".vercel.app")) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    credentials: true,
 }));
 app.use(logger_m_1.requestLogger);
 app.use(express_1.default.json({ limit: "1000mb" }));
@@ -49,6 +62,8 @@ app.use("/api/v1/auth", auth_routes_1.default);
 app.use("/api/v1/users", user_routes_1.default);
 app.use("/api/v1/labs", lab_routes_1.default);
 app.use("/api/v1/lab-reports", labReport_routes_1.default);
+app.use("/api/v1/ictdl", ictdl_routes_1.default);
+app.use("/api/v1/complaints", complaint_routes_1.default);
 app.use(errorHandler_m_1.errorHandler);
 app.listen(serverPort, async () => {
     console.log(`🚀 Server started at http://localhost:${serverPort}`);

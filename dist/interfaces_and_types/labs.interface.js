@@ -4,6 +4,7 @@ exports.ShapeData = void 0;
 class ShapeData {
     constructor(data) {
         this.division = data.division;
+        this.district = data.district;
         this.seat = data.seat;
         this.upazila = data.upazila;
         this.id = data.id;

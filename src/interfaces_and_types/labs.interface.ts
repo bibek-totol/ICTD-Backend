@@ -15,8 +15,8 @@ export interface OutputStructure {
   upazila: string | null;
   institute: string | null;
   lab_type: LabTypes | null;
-  lat: string | null;
-  long: string | null;
+  lat: number | null;
+  long: number | null;
   user: NestedUser;
 }
 
@@ -32,8 +32,8 @@ export class ShapeData {
   mobile: string | null;
   alt_mobile: string | null;
   email: string;
-  lat: string | null;
-  long: string | null;
+  lat: number | null;
+  long: number | null;
 
   constructor(data: OutputStructure) {
     this.division = data.division;
