@@ -12,6 +12,10 @@ import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
 
 const router = express.Router();
 
+// Bulk insert is public for migration
+router.post("/add/bulk", bulkICTDLInsert);
+
+// All other routes are protected
 router.use(AuthorizationMiddleware);
 
 router.get("/", getICTDLLabs);
@@ -25,7 +29,5 @@ router.put(
     ]),
     updateICTDLab
 );
-router.post("/add/bulk", bulkICTDLInsert);
-
 
 export default router;

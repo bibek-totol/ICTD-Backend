@@ -149,11 +149,16 @@ model labs {
   institute          String?    @db.VarChar(255)
   lab_type           LabTypes?
 
-  userId             String     @db.Uuid
-  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  head               String?    @db.VarChar(255)
+  mobile             String?    @db.VarChar(25)
+  alt_mobile         String?    @db.VarChar(25)
+  email              String?    @db.VarChar(255)
 
-  lat                String?
-  long               String?
+  userId             String?    @db.Uuid
+  user               User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lat                Float?
+  long               Float?
   
   labImages          String[]   @default([])
   institutionImages  String[]   @default([])

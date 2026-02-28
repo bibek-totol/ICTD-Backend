@@ -10,6 +10,7 @@ interface AppRequest extends Request {
     division?: string | null;
     district?: string | null;
     upazila?: string | null;
+    email?: string | null;
   };
 }
 

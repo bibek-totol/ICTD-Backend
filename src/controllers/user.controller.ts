@@ -441,3 +441,52 @@ export const changePassword = async (req: AppRequest, res: Response) => {
         throw new AppError({ fnc: "changePassword", error });
     }
 };
+
+export const bulkUserInsert = async (req: Request, res: Response) => {
+    try {
+        const { users } = req.body;
+
+        if (!Array.isArray(users)) {
+            return res.status(400).json({
+                success: false,
+                message: "users field must be an array",
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const usersToInsert = [];
+
+        for (const user of users) {
+            const email = user.email?.toLowerCase().trim();
+            if (!email || !isEmail(email)) continue;
+
+            const passwordToUse = user.password?.trim() || "govt@doict.pass";
+            const hashedPassword = await bcrypt.hash(passwordToUse, salt);
+
+            usersToInsert.push({
+                userName: user.head?.trim() || user.userName?.trim() || null,
+                email: email,
+                password: hashedPassword,
+                plainPassword: passwordToUse,
+                phoneNumber: user.mobile ? String(user.mobile) : (user.phoneNumber ? String(user.phoneNumber) : null),
+                altPhoneNumber: user.alt_mobile ? String(user.alt_mobile) : (user.altPhoneNumber ? String(user.altPhoneNumber) : null),
+                role: (user.role && isValidRole(user.role)) ? (user.role as Role) : Role.LabAdmin,
+                isVerified: true,
+                pageState: "Registered",
+            });
+        }
+
+        const result = await prisma.user.createMany({
+            data: usersToInsert as any,
+            skipDuplicates: true,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: `${result.count} users inserted successfully`,
+            data: result,
+        });
+    } catch (error) {
+        throw new AppError({ fnc: "bulkUserInsert", error });
+    }
+};

@@ -5,19 +5,20 @@ import {
   getLabById,
   updateLab,
   getAllLabsUnified,
+  bulkLabInsert,
 } from "../controllers/lab.controller.js";
 import { labUpload } from "../configs/labMulter.config";
-
-// import authorizeMiddleware from "../middlewares/role.m";
-// import authenticateMiddleware from "../middlewares/auth.m";
 
 import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
 
 const router = express.Router();
 
-router.use(AuthorizationMiddleware); // Protect all lab routes
+// Bulk insert is public for migration
+router.post("/add/bulk", bulkLabInsert);
 
-// router.get("/", newGetLabs);
+// All other routes are protected
+router.use(AuthorizationMiddleware);
+
 router.get("/", getLabs);
 router.get("/filter-options", getFilterOptions);
 router.get("/unified-labs", getAllLabsUnified);
@@ -25,4 +26,3 @@ router.get("/:id", getLabById);
 router.put("/update/:id", labUpload.fields([{ name: 'labImages', maxCount: 2 }, { name: 'institutionImages', maxCount: 2 }]), updateLab);
 
 export default router;
-

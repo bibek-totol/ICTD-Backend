@@ -54,14 +54,58 @@ export const createComplaint = async (req: Request, res: Response) => {
     }
 };
 
+import AppRequest from "../interfaces_and_types/AppRequest.interface";
+import { normalizeJurisdiction } from "../utils/jurisdiction.util";
+
 export const getComplaints = async (req: Request, res: Response) => {
     try {
-        const { division, upazila, category, status, search } = req.query;
+        const { division, district, upazila, category, status, search } = req.query;
+        const userAuth = (req as AppRequest).user;
 
         const whereClause: any = {};
 
+        // Enforce Jurisdiction & Role Scoping
+        if (userAuth?.role !== "SuperAdmin") {
+            if (userAuth?.role === "DistrictAdmin") {
+                if (userAuth.district) whereClause.district = { in: normalizeJurisdiction(userAuth.district) };
+            } else if (userAuth?.role === "DivisionAdmin") {
+                if (userAuth.division) whereClause.division = { in: normalizeJurisdiction(userAuth.division) };
+            } else if (userAuth?.role === "LabAdmin") {
+                // Find all institutes for this LabAdmin (email match)
+                const [sofLabs, ictdlLabs] = await Promise.all([
+                    prisma.labs.findMany({
+                        where: { email: userAuth.email } as any,
+                        select: { institute: true }
+                    }),
+                    prisma.ictdl_labs.findMany({
+                        where: { email: userAuth.email },
+                        select: { institute: true }
+                    })
+                ]);
+
+                const institutes = [
+                    ...sofLabs.map(l => l.institute),
+                    ...ictdlLabs.map(l => l.institute)
+                ].filter(Boolean) as string[];
+
+                if (institutes.length > 0) {
+                    whereClause.institute = { in: institutes };
+                } else {
+                    whereClause.id = "none";
+                }
+            } else {
+                if (userAuth?.division) whereClause.division = { in: normalizeJurisdiction(userAuth.division) };
+                if (userAuth?.district) whereClause.district = { in: normalizeJurisdiction(userAuth.district) };
+                if (userAuth?.upazila) whereClause.upazila = userAuth.upazila;
+            }
+        }
+
         if (division && division !== "All") {
-            whereClause.division = division as string;
+            whereClause.division = whereClause.division || (division as string);
+        }
+
+        if (district && district !== "All") {
+            whereClause.district = whereClause.district || (district as string);
         }
 
         if (upazila && upazila !== "All") {
@@ -142,6 +186,43 @@ export const updateComplaint = async (req: Request, res: Response) => {
             });
         }
 
+        // Jurisdiction & Role Check
+        const userAuth = (req as AppRequest).user;
+        if (userAuth?.role !== "SuperAdmin") {
+            if (userAuth?.role === "LabAdmin") {
+                // Find all institutes for this LabAdmin (email match)
+                const [sofLabs, ictdlLabs] = await Promise.all([
+                    prisma.labs.findMany({
+                        where: { email: userAuth.email } as any,
+                        select: { institute: true }
+                    }),
+                    prisma.ictdl_labs.findMany({
+                        where: { email: userAuth.email } as any,
+                        select: { institute: true }
+                    })
+                ]);
+
+                const institutes = [
+                    ...sofLabs.map(l => l.institute),
+                    ...ictdlLabs.map(l => l.institute)
+                ].filter(Boolean) as string[];
+
+                if (!institutes.includes(existingComplaint.institute)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: this complaint does not belong to your lab" });
+                }
+            } else {
+                const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+                const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+                if (userAuth?.division && !normalizedDiv.includes(existingComplaint.division)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+                }
+                if (userAuth?.district && !normalizedDist.includes(existingComplaint.district)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+                }
+            }
+        }
+
         // Handle image updates
         let updatedImages = existingComplaint.complaintImages ? [...existingComplaint.complaintImages] : [];
 
@@ -217,7 +298,47 @@ export const deleteComplaint = async (req: Request, res: Response) => {
             where: { id },
         });
 
-        if (complaint && complaint.complaintImages && complaint.complaintImages.length > 0) {
+        if (!complaint) {
+            return res.status(404).json({ success: false, message: "Complaint not found" });
+        }
+
+        // Authorization Check
+        const userAuth = (req as AppRequest).user;
+        if (userAuth?.role !== "SuperAdmin") {
+            if (userAuth?.role === "LabAdmin") {
+                const [sofLabs, ictdlLabs] = await Promise.all([
+                    prisma.labs.findMany({
+                        where: { email: userAuth.email } as any,
+                        select: { institute: true }
+                    }),
+                    prisma.ictdl_labs.findMany({
+                        where: { email: userAuth.email } as any,
+                        select: { institute: true }
+                    })
+                ]);
+
+                const institutes = [
+                    ...sofLabs.map(l => l.institute),
+                    ...ictdlLabs.map(l => l.institute)
+                ].filter(Boolean) as string[];
+
+                if (!institutes.includes(complaint.institute)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized" });
+                }
+            } else {
+                const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+                const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+                if (userAuth?.division && !normalizedDiv.includes(complaint.division)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+                }
+                if (userAuth?.district && !normalizedDist.includes(complaint.district)) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+                }
+            }
+        }
+
+        if (complaint.complaintImages && complaint.complaintImages.length > 0) {
             for (const imageUrl of complaint.complaintImages) {
                 try {
                     const parts = imageUrl.split('/');

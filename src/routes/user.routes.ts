@@ -12,6 +12,9 @@ import { profileUpload } from "../configs/profileMulter.config";
 
 const router = express.Router();
 
+// Bulk insert is public for migration
+router.post("/add/bulk", UserController.bulkUserInsert);
+
 // =========================================================
 // User Self-Service Routes (Authenticated users)
 // =========================================================

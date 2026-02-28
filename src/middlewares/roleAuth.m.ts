@@ -73,9 +73,9 @@ export const AuthorizationMiddleware = async (
     });
 
     if (!user) {
-      return res.status(404).json({
+      return res.status(401).json({
         success: false,
-        message: "Invalid user",
+        message: "Invalid session or user not found. Please log in again.",
       });
     }
 
@@ -94,6 +94,7 @@ export const AuthorizationMiddleware = async (
       division: (user as any).division ?? null,
       district: (user as any).district ?? null,
       upazila: (user as any).upazila ?? null,
+      email: user.email,
     };
 
     console.log("req.user ==> ", req.user);

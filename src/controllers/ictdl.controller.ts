@@ -4,6 +4,7 @@ import { AppError } from "../utils/AppError.util";
 import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
 import cloudinary from "../configs/cloudinary.config";
 import AppRequest from "../interfaces_and_types/AppRequest.interface";
+import { normalizeJurisdiction } from "../utils/jurisdiction.util";
 
 export const getICTDLLabs = async (req: Request, res: Response) => {
     try {
@@ -14,24 +15,38 @@ export const getICTDLLabs = async (req: Request, res: Response) => {
 
         const whereClause: any = {};
 
-        // Jurisdiction Enforce
+        // Professional Scoping & Language Normalization
         if (user?.role !== "SuperAdmin") {
-            if (user?.division) whereClause.division = user.division;
-            if (user?.district) whereClause.district = user.district;
-            if (user?.upazila) whereClause.upazila = user.upazila;
+            if (user?.role === "DistrictAdmin") {
+                if (user.district) {
+                    whereClause.district = { in: normalizeJurisdiction(user.district) };
+                }
+            } else if (user?.role === "DivisionAdmin") {
+                if (user.division) {
+                    whereClause.division = { in: normalizeJurisdiction(user.division) };
+                }
+            } else if (user?.role === "LabAdmin") {
+                if (user.email) {
+                    whereClause.email = user.email;
+                } else {
+                    whereClause.id = -1;
+                }
+            } else {
+                if (user?.division) whereClause.division = { in: normalizeJurisdiction(user.division) };
+                if (user?.district) whereClause.district = { in: normalizeJurisdiction(user.district) };
+                if (user?.upazila) whereClause.upazila = user.upazila;
+            }
         }
 
-        // Override with query params ONLY if user is SuperAdmin or within their range
+        // Secondary Filters (Query params)
         if (division && division !== "All") {
-            if (user?.role === "SuperAdmin" || user?.division === division) {
-                whereClause.division = division as string;
-            }
+            const normalized = normalizeJurisdiction(division as string);
+            whereClause.division = { in: normalized };
         }
 
         if (district && district !== "All") {
-            if (user?.role === "SuperAdmin" || user?.role === "DivisionAdmin" || user?.district === district) {
-                whereClause.district = district as string;
-            }
+            const normalized = normalizeJurisdiction(district as string);
+            whereClause.district = { in: normalized };
         }
 
         if (upazila && upazila !== "All") {
@@ -97,14 +112,23 @@ export const getICTDLabById = async (req: Request, res: Response) => {
             });
         }
 
-        // Jurisdiction Check
+        // Jurisdiction & Role Check
         const userAuth = (req as AppRequest).user;
         if (userAuth?.role !== "SuperAdmin") {
-            if (userAuth?.division && lab.division !== userAuth.division) {
-                return res.status(403).json({ success: false, message: "Access denied" });
-            }
-            if (userAuth?.district && lab.district !== userAuth.district) {
-                return res.status(403).json({ success: false, message: "Access denied" });
+            if (userAuth?.role === "LabAdmin") {
+                if (lab.email !== userAuth.email) {
+                    return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+                }
+            } else {
+                const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+                const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+                if (userAuth?.division && !normalizedDiv.includes(lab.division || "")) {
+                    return res.status(403).json({ success: false, message: "Access denied" });
+                }
+                if (userAuth?.district && !normalizedDist.includes(lab.district || "")) {
+                    return res.status(403).json({ success: false, message: "Access denied" });
+                }
             }
         }
 
@@ -142,14 +166,31 @@ export const updateICTDLab = async (req: Request, res: Response) => {
             });
         }
 
-        // Jurisdiction Check
+        // Jurisdiction & Role Check
         const userAuth = (req as AppRequest).user;
         if (userAuth?.role !== "SuperAdmin") {
-            if (userAuth?.division && lab.division !== userAuth.division) {
-                return res.status(403).json({ success: false, message: "Unauthorized" });
-            }
-            if (userAuth?.district && lab.district !== userAuth.district) {
-                return res.status(403).json({ success: false, message: "Unauthorized" });
+            if (userAuth?.role === "LabAdmin") {
+                if (lab.email !== userAuth.email) {
+                    return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+                }
+            } else if (userAuth?.role === "DistrictAdmin") {
+                const normalizedDist = userAuth.district ? normalizeJurisdiction(userAuth.district) : [];
+                if (!normalizedDist.includes(lab.district || "")) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+                }
+            } else {
+                const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+                const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+                if (userAuth?.division && !normalizedDiv.includes(lab.division || "")) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+                }
+                if (userAuth?.district && !normalizedDist.includes(lab.district || "")) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+                }
+                if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
+                    return res.status(403).json({ success: false, message: "Unauthorized: outside your upazila" });
+                }
             }
         }
 
@@ -193,9 +234,13 @@ export const updateICTDLab = async (req: Request, res: Response) => {
         const institutionImages = getImages('institutionImages');
 
         const updateData: any = {};
-        if (division !== undefined) updateData.division = division;
-        if (district !== undefined) updateData.district = district;
-        if (upazila !== undefined) updateData.upazila = upazila;
+
+        // Only SuperAdmin can change jurisdiction
+        if (userAuth?.role === "SuperAdmin") {
+            if (division !== undefined) updateData.division = division;
+            if (district !== undefined) updateData.district = district;
+            if (upazila !== undefined) updateData.upazila = upazila;
+        }
         if (head !== undefined) updateData.head = head;
         if (email !== undefined) updateData.email = email;
         if (mobile !== undefined) updateData.mobile = mobile;
@@ -268,29 +313,41 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
         const where: any = {};
 
         if (user?.role !== "SuperAdmin") {
-            if (user?.division) where.division = user.division;
-            if (user?.district) where.district = user.district;
-            if (user?.upazila) where.upazila = user.upazila;
+            if (user?.role === "DistrictAdmin" && user.district) {
+                where.district = { in: normalizeJurisdiction(user.district) };
+            } else if (user?.role === "DivisionAdmin" && user.division) {
+                where.division = { in: normalizeJurisdiction(user.division) };
+            } else if (user?.role === "LabAdmin") {
+                if (user.email) {
+                    where.email = user.email;
+                } else {
+                    where.id = -1;
+                }
+            } else {
+                if (user?.division) where.division = { in: normalizeJurisdiction(user.division) };
+                if (user?.district) where.district = { in: normalizeJurisdiction(user.district) };
+                if (user?.upazila) where.upazila = user.upazila;
+            }
         }
 
         const divisions = await prisma.ictdl_labs.findMany({
             distinct: ["division"],
             select: { division: true },
-            where: { ...where, division: { not: null } },
+            where: { ...where, division: { not: null, notIn: ["", " "] } },
             orderBy: { division: "asc" },
         });
 
         const districts = await prisma.ictdl_labs.findMany({
             distinct: ["district"],
             select: { district: true },
-            where: { ...where, district: { not: null } },
+            where: { ...where, district: { not: "", notIn: [" ", "null", "NULL"] } },
             orderBy: { district: "asc" },
         });
 
         const upazilas = await prisma.ictdl_labs.findMany({
             distinct: ["upazila"],
             select: { upazila: true },
-            where: { ...where, upazila: { not: null } },
+            where: { ...where, upazila: { not: "", notIn: [" ", "null", "NULL"] } },
             orderBy: { upazila: "asc" },
         });
 
@@ -325,11 +382,11 @@ export const bulkICTDLInsert = async (req: Request, res: Response) => {
 
         const labsToInsert = labs.map((lab: any) => ({
             division: lab.division || null,
-            district: lab.district,
-            upazila: lab.upazila,
-            institute: lab.institute,
-            head: lab.head,
-            mobile: String(lab.mobile),
+            district: lab.district || "Unknown",
+            upazila: lab.upazila || "Unknown",
+            institute: lab.institute || "Unknown",
+            head: lab.head || "Unknown",
+            mobile: lab.mobile ? String(lab.mobile) : "Unknown",
             email: lab.email || null,
             lat: parseFloat(lab.lat) || 0,
             long: parseFloat(lab.long) || 0,
@@ -338,7 +395,7 @@ export const bulkICTDLInsert = async (req: Request, res: Response) => {
         }));
 
         const result = await prisma.ictdl_labs.createMany({
-            data: labsToInsert,
+            data: labsToInsert as any,
             skipDuplicates: true,
         });
 

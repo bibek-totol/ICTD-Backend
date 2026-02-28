@@ -6,6 +6,8 @@ import { LabTypes } from "@prisma/client";
 import cloudinary from "../configs/cloudinary.config";
 import AppRequest from "../interfaces_and_types/AppRequest.interface";
 
+import { normalizeJurisdiction } from "../utils/jurisdiction.util";
+
 const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
   institute: lab.institute,
@@ -15,7 +17,7 @@ const mapLabToFrontend = (lab: any) => ({
   seat: lab.seat,
   head: lab.user?.userName ?? lab.head,
   mobile: lab.user?.phoneNumber ?? lab.mobile,
-  altMobile: lab.user?.altPhoneNumber ?? lab.alt_mobile,
+  altMobile: lab.altPhoneNumber ?? lab.alt_mobile,
   email: lab.user?.email ?? lab.email,
   labType: lab.lab_type,
   lat: lab.lat,
@@ -31,26 +33,40 @@ export const getLabs = async (req: AppRequest, res: Response) => {
 
     const whereClause: any = {};
 
-    // Jurisdiction Enforce
+    // Professional Scoping & Language Normalization
     if (user?.role !== "SuperAdmin") {
-      if (user?.division) whereClause.division = user.division;
-      if (user?.district) whereClause.district = user.district;
-      if (user?.upazila) whereClause.upazila = user.upazila;
+      if (user?.role === "DistrictAdmin") {
+        if (user.district) {
+          whereClause.district = { in: normalizeJurisdiction(user.district) };
+        }
+      } else if (user?.role === "DivisionAdmin") {
+        if (user.division) {
+          whereClause.division = { in: normalizeJurisdiction(user.division) };
+        }
+      } else if (user?.role === "LabAdmin") {
+        if (user.email) {
+          whereClause.email = user.email;
+        } else {
+          // If no email, they see nothing (safety)
+          whereClause.id = -1;
+        }
+      } else {
+        // More specific roles (Upazila/etc)
+        if (user?.division) whereClause.division = { in: normalizeJurisdiction(user.division) };
+        if (user?.district) whereClause.district = { in: normalizeJurisdiction(user.district) };
+        if (user?.upazila) whereClause.upazila = user.upazila;
+      }
     }
 
-    // Override with query params ONLY if user is SuperAdmin or if they are within their jurisdiction
+    // Secondary Filters (Query params)
     if (division && division !== "All") {
-      if (user?.role === "SuperAdmin" || user?.division === division) {
-        whereClause.division = division as string;
-      }
+      const normalized = normalizeJurisdiction(division as string);
+      whereClause.division = { in: normalized };
     }
 
     if (district && district !== "All") {
-      if (user?.role === "SuperAdmin" || user?.role === "DivisionAdmin" || user?.district === district) {
-        // For DivisionAdmin, we should ensure the district belongs to their division
-        // But the database query handles that if whereClause.division is already set
-        whereClause.district = district as string;
-      }
+      const normalized = normalizeJurisdiction(district as string);
+      whereClause.district = { in: normalized };
     }
 
     if (upazila && upazila !== "All") {
@@ -64,6 +80,7 @@ export const getLabs = async (req: AppRequest, res: Response) => {
     if (search) {
       whereClause.OR = [
         { institute: { contains: search as string, mode: "insensitive" } },
+        { head: { contains: search as string, mode: "insensitive" } },
         { user: { userName: { contains: search as string, mode: "insensitive" } } },
         { user: { email: { contains: search as string, mode: "insensitive" } } },
         { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
@@ -133,17 +150,26 @@ export const getLabById = async (req: AppRequest, res: Response) => {
       });
     }
 
-    // Jurisdiction Check
+    // Jurisdiction & Role Check
     const userAuth = req.user;
     if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.division && lab.division !== userAuth.division) {
-        return res.status(403).json({ success: false, message: "Access denied: outside your division" });
-      }
-      if (userAuth?.district && lab.district !== userAuth.district) {
-        return res.status(403).json({ success: false, message: "Access denied: outside your district" });
-      }
-      if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
-        return res.status(403).json({ success: false, message: "Access denied: outside your upazila" });
+      if (userAuth?.role === "LabAdmin") {
+        if ((lab as any).email !== userAuth.email) {
+          return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+        }
+      } else {
+        const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+        const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+        if (userAuth?.division && !normalizedDiv.includes((lab.division as string) || "")) {
+          return res.status(403).json({ success: false, message: "Access denied: outside your division" });
+        }
+        if (userAuth?.district && !normalizedDist.includes((lab.district as string) || "")) {
+          return res.status(403).json({ success: false, message: "Access denied: outside your district" });
+        }
+        if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
+          return res.status(403).json({ success: false, message: "Access denied: outside your upazila" });
+        }
       }
     }
 
@@ -169,29 +195,41 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
     const where: any = {};
 
     if (user?.role !== "SuperAdmin") {
-      if (user?.division) where.division = user.division;
-      if (user?.district) where.district = user.district;
-      if (user?.upazila) where.upazila = user.upazila;
+      if (user?.role === "DistrictAdmin" && user.district) {
+        where.district = { in: normalizeJurisdiction(user.district) };
+      } else if (user?.role === "DivisionAdmin" && user.division) {
+        where.division = { in: normalizeJurisdiction(user.division) };
+      } else if (user?.role === "LabAdmin") {
+        if (user.email) {
+          where.email = user.email;
+        } else {
+          where.id = -1;
+        }
+      } else {
+        if (user?.division) where.division = { in: normalizeJurisdiction(user.division) };
+        if (user?.district) where.district = { in: normalizeJurisdiction(user.district) };
+        if (user?.upazila) where.upazila = user.upazila;
+      }
     }
 
     const divisions = await prisma.labs.findMany({
       distinct: ["division"],
       select: { division: true },
-      where: { ...where, division: { not: null } },
+      where: { ...where, division: { not: null, notIn: ["", " "] } },
       orderBy: { division: "asc" },
     });
 
     const districts = await prisma.labs.findMany({
       distinct: ["district"],
       select: { district: true },
-      where: { ...where, district: { not: null } },
+      where: { ...where, district: { not: null, notIn: ["", " "] } },
       orderBy: { district: "asc" },
     });
 
     const upazilas = await prisma.labs.findMany({
       distinct: ["upazila"],
       select: { upazila: true },
-      where: { ...where, upazila: { not: null } },
+      where: { ...where, upazila: { not: null, notIn: ["", " "] } },
       orderBy: { upazila: "asc" },
     });
 
@@ -242,14 +280,31 @@ export const updateLab = async (req: Request, res: Response) => {
       });
     }
 
-    // Jurisdiction Check
-    const userAuth = (req as any).user;
+    // Jurisdiction & Role Check
+    const userAuth = (req as AppRequest).user;
     if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.division && lab.division !== userAuth.division) {
-        return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
-      }
-      if (userAuth?.district && lab.district !== userAuth.district) {
-        return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+      if (userAuth?.role === "LabAdmin") {
+        if ((lab as any).email !== userAuth.email) {
+          return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+        }
+      } else if (userAuth?.role === "DistrictAdmin") {
+        const normalizedDist = userAuth.district ? normalizeJurisdiction(userAuth.district) : [];
+        if (!normalizedDist.includes(lab.district || "")) {
+          return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+        }
+      } else {
+        const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
+        const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
+
+        if (userAuth?.division && !normalizedDiv.includes(lab.division || "")) {
+          return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+        }
+        if (userAuth?.district && !normalizedDist.includes(lab.district || "")) {
+          return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+        }
+        if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
+          return res.status(403).json({ success: false, message: "Unauthorized: outside your upazila" });
+        }
       }
     }
 
@@ -347,9 +402,14 @@ export const updateLab = async (req: Request, res: Response) => {
 
       // 2. Update Lab record
       const labUpdateData: any = {};
-      if (division !== undefined) labUpdateData.division = division;
-      if (district !== undefined) labUpdateData.district = district;
-      if (upazila !== undefined) labUpdateData.upazila = upazila;
+
+      // Only SuperAdmin can change jurisdiction
+      if (userAuth?.role === "SuperAdmin") {
+        if (division !== undefined) labUpdateData.division = division;
+        if (district !== undefined) labUpdateData.district = district;
+        if (upazila !== undefined) labUpdateData.upazila = upazila;
+      }
+
       if (seat !== undefined) labUpdateData.seat = seat;
       if (lat !== undefined) labUpdateData.lat = lat.toString();
       if (long !== undefined) labUpdateData.long = long.toString();
@@ -395,9 +455,21 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
     const where: any = {};
 
     if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.division) where.division = userAuth.division;
-      if (userAuth?.district) where.district = userAuth.district;
-      if (userAuth?.upazila) where.upazila = userAuth.upazila;
+      if (userAuth?.role === "DistrictAdmin") {
+        if (userAuth.district) where.district = { in: normalizeJurisdiction(userAuth.district) };
+      } else if (userAuth?.role === "DivisionAdmin") {
+        if (userAuth.division) where.division = { in: normalizeJurisdiction(userAuth.division) };
+      } else if (userAuth?.role === "LabAdmin") {
+        if (userAuth.email) {
+          where.email = userAuth.email;
+        } else {
+          where.id = -1;
+        }
+      } else {
+        if (userAuth?.division) where.division = { in: normalizeJurisdiction(userAuth.division) };
+        if (userAuth?.district) where.district = { in: normalizeJurisdiction(userAuth.district) };
+        if (userAuth?.upazila) where.upazila = userAuth.upazila;
+      }
     }
 
     const labs = await prisma.labs.findMany({
@@ -449,6 +521,53 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
   } catch (error) {
     const errorObj: AppErrorPayload = {
       fnc: "getAllLabsUnified",
+      error,
+    };
+    throw new AppError(errorObj);
+  }
+};
+
+export const bulkLabInsert = async (req: Request, res: Response) => {
+  try {
+    const { labs } = req.body as any;
+
+    if (!Array.isArray(labs)) {
+      return res.status(400).json({
+        success: false,
+        message: "labs field must be an array",
+      });
+    }
+
+    const labsToInsert = labs.map((lab: any) => ({
+      division: lab.division || null,
+      district: lab.district || null,
+      seat: lab.seat || null,
+      upazila: lab.upazila || null,
+      institute: lab.institute || null,
+      lab_type: (lab.lab_type as LabTypes) || LabTypes.sof,
+      head: lab.head || null,
+      mobile: lab.mobile ? String(lab.mobile) : null,
+      alt_mobile: lab.alt_mobile ? String(lab.alt_mobile) : null,
+      email: lab.email || null,
+      lat: parseFloat(lab.lat) || 0,
+      long: parseFloat(lab.long) || 0,
+      labImages: [],
+      institutionImages: [],
+    }));
+
+    const result = await prisma.labs.createMany({
+      data: labsToInsert as any,
+      skipDuplicates: true,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `${result.count} labs inserted successfully`,
+      data: result,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = {
+      fnc: "bulkLabInsert",
       error,
     };
     throw new AppError(errorObj);
