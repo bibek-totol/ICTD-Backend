@@ -72,7 +72,7 @@ export const getLabReports = async (req: Request, res: Response) => {
                 if (userAuth.division) labClause.division = { in: normalizeJurisdiction(userAuth.division) };
             } else if (userAuth?.role === "LabAdmin") {
                 if (userAuth.email) {
-                    labClause.email = userAuth.email;
+                    labClause.email = { equals: userAuth.email, mode: "insensitive" };
                 } else {
                     labClause.id = -1;
                 }

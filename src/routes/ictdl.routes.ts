@@ -5,6 +5,9 @@ import {
     updateICTDLab,
     getICTDLFilterOptions,
     bulkICTDLInsert,
+    getICTDLLabsPublic,
+    getICTDLFilterOptionsPublic,
+    getICTDLabByIdPublic,
 } from "../controllers/ictdl.controller";
 import { labUpload } from "../configs/labMulter.config";
 
@@ -14,13 +17,18 @@ const router = express.Router();
 
 // Bulk insert is public for migration
 router.post("/add/bulk", bulkICTDLInsert);
+router.get("/public", getICTDLLabsPublic);
+router.get("/filter-optionspublic", getICTDLFilterOptionsPublic);
+router.get("/:idpublic", getICTDLabByIdPublic);
+
+
+
+// All these routes require authentication to enforce role-based scoping
+router.use(AuthorizationMiddleware);
 
 router.get("/", getICTDLLabs);
 router.get("/filter-options", getICTDLFilterOptions);
 router.get("/:id", getICTDLabById);
-
-// All other routes are protected
-router.use(AuthorizationMiddleware);
 
 router.put(
     "/update/:id",

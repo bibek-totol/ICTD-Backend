@@ -13,6 +13,7 @@ import ComplaintRouter from "./routes/complaint.routes";
 import { requestLogger } from "./middlewares/logger.m";
 import { errorHandler } from "./middlewares/errorHandler.m";
 import cookieParser from "cookie-parser";
+import { i18nMiddleware } from "./middlewares/i18n.middleware";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use(express.json({ limit: "1000mb" }));
 app.use(express.urlencoded({ limit: "1000mb", extended: true }));
 
 app.use(cookieParser());
+app.use(i18nMiddleware);
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({ status: true, message: "Server is running" });

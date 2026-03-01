@@ -1,0 +1,8 @@
+{
+    "labs_retrieved": "Labs retrieved successfully",
+    "lab_retrieved": "Lab retrieved successfully",
+    "filter_options_retrieved": "Filter options retrieved successfully",
+    "error_occurred": "An error occurred while processing your request",
+    "unauthorized": "You are not authorized to perform this action",
+    "not_found": "Resource not found"
+}

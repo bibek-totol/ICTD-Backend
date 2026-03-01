@@ -74,11 +74,11 @@ export const getComplaints = async (req: Request, res: Response) => {
                 // Find all institutes for this LabAdmin (email match)
                 const [sofLabs, ictdlLabs] = await Promise.all([
                     prisma.labs.findMany({
-                        where: { email: userAuth.email } as any,
+                        where: { email: { equals: userAuth.email, mode: "insensitive" } } as any,
                         select: { institute: true }
                     }),
                     prisma.ictdl_labs.findMany({
-                        where: { email: userAuth.email },
+                        where: { email: { equals: userAuth.email, mode: "insensitive" } },
                         select: { institute: true }
                     })
                 ]);

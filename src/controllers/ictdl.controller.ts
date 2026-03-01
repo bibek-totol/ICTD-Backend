@@ -27,7 +27,7 @@ export const getICTDLLabs = async (req: Request, res: Response) => {
                 }
             } else if (user?.role === "LabAdmin") {
                 if (user.email) {
-                    whereClause.email = user.email;
+                    whereClause.email = { equals: user.email, mode: "insensitive" };
                 } else {
                     whereClause.id = -1;
                 }
@@ -95,6 +95,61 @@ export const getICTDLLabs = async (req: Request, res: Response) => {
     }
 };
 
+export const getICTDLLabsPublic = async (req: Request, res: Response) => {
+    try {
+        const { division, district, upazila, search, page = "1", limit = "25" } = req.query;
+        const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+        const take = parseInt(limit as string);
+
+        const whereClause: any = {};
+
+        if (division && division !== "All") {
+            const normalized = normalizeJurisdiction(division as string);
+            whereClause.division = { in: normalized };
+        }
+        if (district && district !== "All") {
+            const normalized = normalizeJurisdiction(district as string);
+            whereClause.district = { in: normalized };
+        }
+        if (upazila && upazila !== "All") {
+            whereClause.upazila = upazila as string;
+        }
+
+        if (search) {
+            whereClause.OR = [
+                { institute: { contains: search as string, mode: "insensitive" } },
+                { head: { contains: search as string, mode: "insensitive" } },
+                { email: { contains: search as string, mode: "insensitive" } },
+                { mobile: { contains: search as string, mode: "insensitive" } },
+                { division: { contains: search as string, mode: "insensitive" } },
+                { district: { contains: search as string, mode: "insensitive" } },
+            ];
+        }
+
+        const [labs, totalCount] = await Promise.all([
+            prisma.ictdl_labs.findMany({
+                where: whereClause,
+                skip,
+                take,
+                orderBy: { id: "asc" },
+            }),
+            prisma.ictdl_labs.count({ where: whereClause }),
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            message: "Public ICTDL labs retrieved successfully",
+            data: labs,
+            totalCount,
+            page: parseInt(page as string),
+            limit: take,
+        });
+    } catch (error) {
+        const errorObj: AppErrorPayload = { fnc: "getICTDLLabsPublic", error };
+        throw new AppError(errorObj);
+    }
+};
+
 export const getICTDLabById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -116,7 +171,7 @@ export const getICTDLabById = async (req: Request, res: Response) => {
         const userAuth = (req as AppRequest).user;
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "LabAdmin") {
-                if (lab.email !== userAuth.email) {
+                if (lab.email?.toLowerCase() !== userAuth.email?.toLowerCase()) {
                     return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
                 }
             } else {
@@ -146,6 +201,28 @@ export const getICTDLabById = async (req: Request, res: Response) => {
     }
 };
 
+export const getICTDLabByIdPublic = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const lab = await prisma.ictdl_labs.findUnique({
+            where: { id: parseInt(id as string) },
+        });
+
+        if (!lab) {
+            return res.status(404).json({ success: false, message: "ICTDL lab not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Public ICTDL lab retrieved successfully",
+            data: lab,
+        });
+    } catch (error) {
+        const errorObj: AppErrorPayload = { fnc: "getICTDLabByIdPublic", error };
+        throw new AppError(errorObj);
+    }
+};
+
 export const updateICTDLab = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -170,7 +247,7 @@ export const updateICTDLab = async (req: Request, res: Response) => {
         const userAuth = (req as AppRequest).user;
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "LabAdmin") {
-                if (lab.email !== userAuth.email) {
+                if (lab.email?.toLowerCase() !== userAuth.email?.toLowerCase()) {
                     return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
                 }
             } else if (userAuth?.role === "DistrictAdmin") {
@@ -319,7 +396,7 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
                 where.division = { in: normalizeJurisdiction(user.division) };
             } else if (user?.role === "LabAdmin") {
                 if (user.email) {
-                    where.email = user.email;
+                    where.email = { equals: user.email, mode: "insensitive" };
                 } else {
                     where.id = -1;
                 }
@@ -365,6 +442,44 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
             fnc: "getICTDLFilterOptions",
             error,
         };
+        throw new AppError(errorObj);
+    }
+};
+
+export const getICTDLFilterOptionsPublic = async (req: Request, res: Response) => {
+    try {
+        const divisions = await prisma.ictdl_labs.findMany({
+            distinct: ["division"],
+            select: { division: true },
+            where: { division: { not: null, notIn: ["", " "] } },
+            orderBy: { division: "asc" },
+        });
+
+        const districts = await prisma.ictdl_labs.findMany({
+            distinct: ["district"],
+            select: { district: true },
+            where: { district: { not: "", notIn: [" ", "null", "NULL"] } },
+            orderBy: { district: "asc" },
+        });
+
+        const upazilas = await prisma.ictdl_labs.findMany({
+            distinct: ["upazila"],
+            select: { upazila: true },
+            where: { upazila: { not: "", notIn: [" ", "null", "NULL"] } },
+            orderBy: { upazila: "asc" },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Public ICTDL filter options retrieved successfully",
+            data: {
+                divisions: divisions.map((d: any) => d.division).filter(Boolean),
+                districts: districts.map((d: any) => d.district).filter(Boolean),
+                upazilas: upazilas.map((u: any) => u.upazila).filter(Boolean),
+            },
+        });
+    } catch (error) {
+        const errorObj: AppErrorPayload = { fnc: "getICTDLFilterOptionsPublic", error };
         throw new AppError(errorObj);
     }
 };

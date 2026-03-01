@@ -12,6 +12,7 @@ interface AppRequest extends Request {
     upazila?: string | null;
     email?: string | null;
   };
+  lang?: string;
 }
 
 export default AppRequest;

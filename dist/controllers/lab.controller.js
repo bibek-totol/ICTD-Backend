@@ -45,7 +45,10 @@ const getLabs = async (req, res) => {
             }
             else if (user?.role === "LabAdmin") {
                 if (user.email) {
-                    whereClause.email = user.email;
+                    whereClause.OR = [
+                        { email: { equals: user.email, mode: "insensitive" } },
+                        { user: { email: { equals: user.email, mode: "insensitive" } } }
+                    ];
                 }
                 else {
                     // If no email, they see nothing (safety)
@@ -149,7 +152,10 @@ const getLabById = async (req, res) => {
         const userAuth = req.user;
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "LabAdmin") {
-                if (lab.email !== userAuth.email) {
+                const labEmail = lab.email?.toLowerCase();
+                const labUserEmail = lab.user?.email?.toLowerCase();
+                const authEmail = userAuth.email?.toLowerCase();
+                if (labEmail !== authEmail && labUserEmail !== authEmail) {
                     return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
                 }
             }
@@ -196,7 +202,10 @@ const getFilterOptions = async (req, res) => {
             }
             else if (user?.role === "LabAdmin") {
                 if (user.email) {
-                    where.email = user.email;
+                    where.OR = [
+                        { email: { equals: user.email, mode: "insensitive" } },
+                        { user: { email: { equals: user.email, mode: "insensitive" } } }
+                    ];
                 }
                 else {
                     where.id = -1;
@@ -276,7 +285,10 @@ const updateLab = async (req, res) => {
         const userAuth = req.user;
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "LabAdmin") {
-                if (lab.email !== userAuth.email) {
+                const labEmail = lab.email?.toLowerCase();
+                const labUserEmail = lab.user?.email?.toLowerCase();
+                const authEmail = userAuth.email?.toLowerCase();
+                if (labEmail !== authEmail && labUserEmail !== authEmail) {
                     return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
                 }
             }
@@ -447,35 +459,51 @@ exports.updateLab = updateLab;
 const getAllLabsUnified = async (req, res) => {
     try {
         const userAuth = req.user;
-        const where = {};
+        const whereLabs = {};
+        const whereIctdl = {};
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "DistrictAdmin") {
-                if (userAuth.district)
-                    where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
+                if (userAuth.district) {
+                    whereLabs.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
+                    whereIctdl.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
+                }
             }
             else if (userAuth?.role === "DivisionAdmin") {
-                if (userAuth.division)
-                    where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
+                if (userAuth.division) {
+                    whereLabs.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
+                    whereIctdl.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
+                }
             }
             else if (userAuth?.role === "LabAdmin") {
                 if (userAuth.email) {
-                    where.email = userAuth.email;
+                    whereLabs.OR = [
+                        { email: { equals: userAuth.email, mode: "insensitive" } },
+                        { user: { email: { equals: userAuth.email, mode: "insensitive" } } }
+                    ];
+                    whereIctdl.email = { equals: userAuth.email, mode: "insensitive" };
                 }
                 else {
-                    where.id = -1;
+                    whereLabs.id = -1;
+                    whereIctdl.id = -1;
                 }
             }
             else {
-                if (userAuth?.division)
-                    where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
-                if (userAuth?.district)
-                    where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
-                if (userAuth?.upazila)
-                    where.upazila = userAuth.upazila;
+                if (userAuth?.division) {
+                    whereLabs.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
+                    whereIctdl.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.division) };
+                }
+                if (userAuth?.district) {
+                    whereLabs.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
+                    whereIctdl.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(userAuth.district) };
+                }
+                if (userAuth?.upazila) {
+                    whereLabs.upazila = userAuth.upazila;
+                    whereIctdl.upazila = userAuth.upazila;
+                }
             }
         }
         const labs = await prisma_config_1.prisma.labs.findMany({
-            where,
+            where: whereLabs,
             select: {
                 id: true,
                 institute: true,
@@ -485,7 +513,7 @@ const getAllLabsUnified = async (req, res) => {
             },
         });
         const ictdlLabs = await prisma_config_1.prisma.ictdl_labs.findMany({
-            where,
+            where: whereIctdl,
             select: {
                 id: true,
                 institute: true,

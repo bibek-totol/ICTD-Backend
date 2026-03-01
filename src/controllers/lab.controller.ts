@@ -7,6 +7,7 @@ import cloudinary from "../configs/cloudinary.config";
 import AppRequest from "../interfaces_and_types/AppRequest.interface";
 
 import { normalizeJurisdiction } from "../utils/jurisdiction.util";
+import { t } from "../utils/translate.util";
 
 const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
@@ -45,9 +46,8 @@ export const getLabs = async (req: AppRequest, res: Response) => {
         }
       } else if (user?.role === "LabAdmin") {
         if (user.email) {
-          whereClause.email = user.email;
+          whereClause.email = { equals: user.email, mode: "insensitive" };
         } else {
-          // If no email, they see nothing (safety)
           whereClause.id = -1;
         }
       } else {
@@ -110,7 +110,7 @@ export const getLabs = async (req: AppRequest, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Labs retrieved successfully",
+      message: t("labs_retrieved", req.lang),
       data: mappedLabs,
       count: mappedLabs.length,
     });
@@ -154,10 +154,11 @@ export const getLabById = async (req: AppRequest, res: Response) => {
     const userAuth = req.user;
     if (userAuth?.role !== "SuperAdmin") {
       if (userAuth?.role === "LabAdmin") {
-        if ((lab as any).email !== userAuth.email) {
+        if (!lab.email || lab.email.toLowerCase() !== userAuth.email?.toLowerCase()) {
           return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
         }
       } else {
+
         const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
         const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
 
@@ -201,7 +202,7 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
         where.division = { in: normalizeJurisdiction(user.division) };
       } else if (user?.role === "LabAdmin") {
         if (user.email) {
-          where.email = user.email;
+          where.email = { equals: user.email, mode: "insensitive" };
         } else {
           where.id = -1;
         }
@@ -259,6 +260,144 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
   }
 };
 
+export const getLabsPublic = async (req: Request, res: Response) => {
+  try {
+    const { division, district, upazila, labType, search } = req.query;
+    const whereClause: any = {};
+
+    if (division && division !== "All") {
+      const normalized = normalizeJurisdiction(division as string);
+      whereClause.division = { in: normalized };
+    }
+    if (district && district !== "All") {
+      const normalized = normalizeJurisdiction(district as string);
+      whereClause.district = { in: normalized };
+    }
+    if (upazila && upazila !== "All") {
+      whereClause.upazila = upazila as string;
+    }
+    if (labType && labType !== "All") {
+      whereClause.lab_type = labType as string;
+    }
+    if (search) {
+      whereClause.OR = [
+        { institute: { contains: search as string, mode: "insensitive" } },
+        { head: { contains: search as string, mode: "insensitive" } },
+        { user: { userName: { contains: search as string, mode: "insensitive" } } },
+        { user: { email: { contains: search as string, mode: "insensitive" } } },
+        { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
+        { division: { contains: search as string, mode: "insensitive" } },
+        { district: { contains: search as string, mode: "insensitive" } },
+      ];
+    }
+
+    const labs = await prisma.labs.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            userName: true,
+            email: true,
+            phoneNumber: true,
+            altPhoneNumber: true,
+          },
+        },
+      },
+      orderBy: { id: "asc" },
+    });
+
+    const mappedLabs = labs.map(mapLabToFrontend);
+    return res.status(200).json({
+      success: true,
+      message: t("labs_retrieved", (req as any).lang),
+      data: mappedLabs,
+      count: mappedLabs.length,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = { fnc: "getLabsPublic", error };
+    throw new AppError(errorObj);
+  }
+};
+
+export const getLabByIdPublic = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const lab = await prisma.labs.findUnique({
+      where: { id: parseInt(id as string) },
+      include: {
+        user: {
+          select: {
+            userName: true,
+            email: true,
+            phoneNumber: true,
+            altPhoneNumber: true,
+          },
+        },
+      },
+    });
+
+    if (!lab) {
+      return res.status(404).json({ success: false, message: "Lab not found" });
+    }
+
+    const mappedLab = mapLabToFrontend(lab);
+    return res.status(200).json({
+      success: true,
+      message: "Public lab retrieved successfully",
+      data: mappedLab,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = { fnc: "getLabByIdPublic", error };
+    throw new AppError(errorObj);
+  }
+};
+
+export const getFilterOptionsPublic = async (req: Request, res: Response) => {
+  try {
+    const divisions = await prisma.labs.findMany({
+      distinct: ["division"],
+      select: { division: true },
+      where: { division: { not: null, notIn: ["", " "] } },
+      orderBy: { division: "asc" },
+    });
+
+    const districts = await prisma.labs.findMany({
+      distinct: ["district"],
+      select: { district: true },
+      where: { district: { not: null, notIn: ["", " "] } },
+      orderBy: { district: "asc" },
+    });
+
+    const upazilas = await prisma.labs.findMany({
+      distinct: ["upazila"],
+      select: { upazila: true },
+      where: { upazila: { not: null, notIn: ["", " "] } },
+      orderBy: { upazila: "asc" },
+    });
+
+    const labTypes = await prisma.labs.findMany({
+      distinct: ["lab_type"],
+      select: { lab_type: true },
+      where: { lab_type: { not: null } },
+      orderBy: { lab_type: "asc" },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Public filter options retrieved successfully",
+      data: {
+        divisions: divisions.map((d) => d.division).filter(Boolean),
+        districts: districts.map((d) => d.district).filter(Boolean),
+        upazilas: upazilas.map((u) => u.upazila).filter(Boolean),
+        labTypes: labTypes.map((l) => l.lab_type).filter(Boolean),
+      },
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = { fnc: "getFilterOptionsPublic", error };
+    throw new AppError(errorObj);
+  }
+};
+
 export const updateLab = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -284,7 +423,7 @@ export const updateLab = async (req: Request, res: Response) => {
     const userAuth = (req as AppRequest).user;
     if (userAuth?.role !== "SuperAdmin") {
       if (userAuth?.role === "LabAdmin") {
-        if ((lab as any).email !== userAuth.email) {
+        if (!lab.email || lab.email.toLowerCase() !== userAuth.email?.toLowerCase()) {
           return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
         }
       } else if (userAuth?.role === "DistrictAdmin") {
@@ -461,7 +600,7 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
         if (userAuth.division) where.division = { in: normalizeJurisdiction(userAuth.division) };
       } else if (userAuth?.role === "LabAdmin") {
         if (userAuth.email) {
-          where.email = userAuth.email;
+          where.email = { equals: userAuth.email, mode: "insensitive" };
         } else {
           where.id = -1;
         }
@@ -523,6 +662,58 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
       fnc: "getAllLabsUnified",
       error,
     };
+    throw new AppError(errorObj);
+  }
+};
+
+export const getAllLabsUnifiedPublic = async (req: Request, res: Response) => {
+  try {
+    const labs = await prisma.labs.findMany({
+      select: {
+        id: true,
+        institute: true,
+        division: true,
+        district: true,
+        upazila: true,
+      },
+    });
+
+    const ictdlLabs = await prisma.ictdl_labs.findMany({
+      select: {
+        id: true,
+        institute: true,
+        division: true,
+        district: true,
+        upazila: true,
+      },
+    });
+
+    const unifiedLabs = [
+      ...labs.map((l) => ({
+        id: `lab-${l.id}`,
+        institute: l.institute || "",
+        division: l.division || "",
+        district: l.district || "",
+        upazila: l.upazila || "",
+        type: "SRD/SOF",
+      })),
+      ...ictdlLabs.map((l) => ({
+        id: `ictdl-${l.id}`,
+        institute: l.institute || "",
+        division: l.division || "",
+        district: l.district || "",
+        upazila: l.upazila || "",
+        type: "ICTDL",
+      })),
+    ];
+
+    return res.status(200).json({
+      success: true,
+      message: "Public unified labs retrieved successfully",
+      data: unifiedLabs,
+    });
+  } catch (error) {
+    const errorObj: AppErrorPayload = { fnc: "getAllLabsUnifiedPublic", error };
     throw new AppError(errorObj);
   }
 };
