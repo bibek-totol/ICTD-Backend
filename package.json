@@ -9,7 +9,13 @@
     "start": "node ./dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "fix:cloudinary": "tsx ./src/scripts/fixCloudinaryAccess.ts",
+    "diagnose:cloudinary": "tsx ./src/scripts/diagnoseCloudinary.ts",
+    "cleanup:missing-files": "tsx ./src/scripts/cleanupMissingFiles.ts",
+    "fix:pdf-type": "tsx ./src/scripts/fixPdfResourceType.ts",
+    "migrate:pdfs": "tsx ./src/scripts/migrateCloudinaryPdfs.ts",
+    "fix:pdf-inline": "tsx ./src/scripts/fixPdfInlineDisplay.ts"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +40,7 @@
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.4.1",
     "@types/multer": "^2.0.0",
+    "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",

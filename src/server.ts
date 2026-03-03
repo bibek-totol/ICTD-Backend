@@ -9,6 +9,8 @@ import AuthRouter from "./routes/auth.routes";
 import LabReportRouter from "./routes/labReport.routes";
 import ICTDLRouter from "./routes/ictdl.routes";
 import ComplaintRouter from "./routes/complaint.routes";
+import AnnouncementRouter from "./routes/announcement.routes";
+import FileRouter from "./routes/file.routes";
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from "./middlewares/logger.m";
 import { errorHandler } from "./middlewares/errorHandler.m";
@@ -46,7 +48,7 @@ app.use(
       }
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Range"],
     credentials: true,
   }),
 );
@@ -70,6 +72,8 @@ app.use("/api/v1/labs", LabRouter);
 app.use("/api/v1/lab-reports", LabReportRouter);
 app.use("/api/v1/ictdl", ICTDLRouter);
 app.use("/api/v1/complaints", ComplaintRouter);
+app.use("/api/v1/announcements", AnnouncementRouter);
+app.use("/api/v1/files", FileRouter);
 
 app.use(errorHandler);
 
