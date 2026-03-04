@@ -2,6 +2,7 @@ import express from "express";
 import {
   getLabs,
   getFilterOptions,
+  getUnifiedFilterOptions,
   getLabById,
   updateLab,
   getAllLabsUnified,
@@ -10,7 +11,7 @@ import {
   getFilterOptionsPublic,
   getLabByIdPublic,
   getAllLabsUnifiedPublic,
-} from "../controllers/lab.controller.js";
+} from "../controllers/lab.controller";
 import { labUpload } from "../configs/labMulter.config";
 
 import { AuthorizationMiddleware } from "../middlewares/roleAuth.m";
@@ -20,9 +21,9 @@ const router = express.Router();
 // Public routes
 router.post("/add/bulk", bulkLabInsert);
 router.get("/public", getLabsPublic);
-router.get("/filter-optionspublic", getFilterOptionsPublic);
-router.get("/unified-labspublic", getAllLabsUnifiedPublic);
-router.get("/:idpublic", getLabByIdPublic);
+router.get("/filter-options/public", getFilterOptionsPublic);
+router.get("/unified-labs/public", getAllLabsUnifiedPublic);
+router.get("/:id/public", getLabByIdPublic);
 
 
 
@@ -31,6 +32,7 @@ router.use(AuthorizationMiddleware);
 
 router.get("/", getLabs);
 router.get("/filter-options", getFilterOptions);
+router.get("/unified-filter-options", getUnifiedFilterOptions);
 router.get("/unified-labs", getAllLabsUnified);
 router.get("/:id", getLabById);
 

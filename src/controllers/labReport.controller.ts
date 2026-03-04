@@ -7,6 +7,7 @@ export const createLabReport = async (req: Request, res: Response) => {
     try {
         const {
             labId,
+            labType, // "sof" or "ictdl"
             basicRobotics,
             advancedRobotics,
             "3dPrinter": threeDPrinter,
@@ -22,21 +23,28 @@ export const createLabReport = async (req: Request, res: Response) => {
         const files = req.files as Express.Multer.File[];
         const storageImages: string[] = files ? files.map((file: any) => file.path) : [];
 
+        const reportData: any = {
+            basicRobotics: parseInt(basicRobotics) || 0,
+            advancedRobotics: parseInt(advancedRobotics) || 0,
+            threeDPrinter: parseInt(threeDPrinter) || 0,
+            vrHeadset: parseInt(vrHeadset) || 0,
+            networkCamera: parseInt(networkCamera) || 0,
+            ups: parseInt(ups) || 0,
+            isFunctional: isFunctional || null,
+            damageDetails: damageDetails || null,
+            storageConditions: null,
+            storageImages: storageImages,
+            recommendations: recommendations || null,
+        };
+
+        if (labType === "ictdl") {
+            reportData.ictdlLabId = parseInt(labId);
+        } else {
+            reportData.labId = parseInt(labId);
+        }
+
         const report = await prisma.labReport.create({
-            data: {
-                labId: parseInt(labId),
-                basicRobotics: parseInt(basicRobotics) || 0,
-                advancedRobotics: parseInt(advancedRobotics) || 0,
-                threeDPrinter: parseInt(threeDPrinter) || 0,
-                vrHeadset: parseInt(vrHeadset) || 0,
-                networkCamera: parseInt(networkCamera) || 0,
-                ups: parseInt(ups) || 0,
-                isFunctional: isFunctional || null,
-                damageDetails: damageDetails || null,
-                storageConditions: null,
-                storageImages: storageImages,
-                recommendations: recommendations || null,
-            },
+            data: reportData,
         });
 
         return res.status(201).json({
@@ -103,14 +111,21 @@ export const getLabReports = async (req: Request, res: Response) => {
         if (search) {
             whereClause.OR = [
                 { lab: { institute: { contains: search as string, mode: "insensitive" } } },
+                { ictdlLab: { institute: { contains: search as string, mode: "insensitive" } } },
                 { lab: { division: { contains: search as string, mode: "insensitive" } } },
+                { ictdlLab: { division: { contains: search as string, mode: "insensitive" } } },
                 { lab: { district: { contains: search as string, mode: "insensitive" } } },
+                { ictdlLab: { district: { contains: search as string, mode: "insensitive" } } },
                 { lab: { upazila: { contains: search as string, mode: "insensitive" } } },
+                { ictdlLab: { upazila: { contains: search as string, mode: "insensitive" } } },
             ];
         }
 
         if (Object.keys(labClause).length > 0) {
-            whereClause.lab = { ...whereClause.lab, ...labClause };
+            whereClause.OR = [
+                { lab: { ...labClause } },
+                { ictdlLab: { ...labClause } }
+            ];
         }
 
         const reports = await prisma.labReport.findMany({
@@ -125,33 +140,40 @@ export const getLabReports = async (req: Request, res: Response) => {
                         },
                     },
                 },
+                ictdlLab: true,
             },
             orderBy: {
                 createdAt: "desc",
             },
         });
 
-        const mappedReports = reports.map((report) => ({
-            id: report.id,
-            labId: report.labId,
-            institute: report.lab.institute,
-            division: report.lab.division,
-            upazila: report.lab.upazila,
-            labType: report.lab.lab_type,
-            head: report.lab.user?.userName,
-            basicRobotics: report.basicRobotics,
-            advancedRobotics: report.advancedRobotics,
-            "3dPrinter": report.threeDPrinter,
-            vrHeadset: report.vrHeadset,
-            networkCamera: report.networkCamera,
-            ups: report.ups,
-            isFunctional: report.isFunctional,
-            damageDetails: report.damageDetails,
-            storageConditions: report.storageConditions,
-            storageImages: report.storageImages,
-            recommendations: report.recommendations,
-            createdAt: report.createdAt,
-        }));
+        const mappedReports = reports.map((report) => {
+            const lab = report.lab || report.ictdlLab;
+            if (!lab) return null;
+
+            return {
+                id: report.id,
+                labId: report.labId || report.ictdlLabId,
+                institute: lab.institute,
+                division: lab.division,
+                district: lab.district,
+                upazila: lab.upazila,
+                labType: (lab as any).lab_type || "ictdl",
+                head: (lab as any).user?.userName || (lab as any).head,
+                basicRobotics: report.basicRobotics,
+                advancedRobotics: report.advancedRobotics,
+                "3dPrinter": report.threeDPrinter,
+                vrHeadset: report.vrHeadset,
+                networkCamera: report.networkCamera,
+                ups: report.ups,
+                isFunctional: report.isFunctional,
+                damageDetails: report.damageDetails,
+                storageConditions: report.storageConditions,
+                storageImages: report.storageImages,
+                recommendations: report.recommendations,
+                createdAt: report.createdAt,
+            };
+        }).filter(Boolean);
 
         return res.status(200).json({
             success: true,
@@ -174,27 +196,32 @@ export const deleteLabReport = async (req: Request, res: Response) => {
 
         const report = await prisma.labReport.findUnique({
             where: { id },
-            include: { lab: true }
+            include: { lab: true, ictdlLab: true }
         });
 
         if (!report) {
             return res.status(404).json({ success: false, message: "Report not found" });
         }
 
+        const lab = report.lab || report.ictdlLab;
+        if (!lab) {
+            return res.status(404).json({ success: false, message: "Associated lab not found" });
+        }
+
         // Authorization Check
         if (userAuth?.role !== "SuperAdmin") {
             if (userAuth?.role === "LabAdmin") {
-                if ((report.lab as any).email !== userAuth.email) {
+                if ((lab as any).email !== userAuth.email) {
                     return res.status(403).json({ success: false, message: "Unauthorized: this report does not belong to your lab" });
                 }
             } else {
                 const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
                 const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
 
-                if (userAuth?.division && !normalizedDiv.includes(report.lab.division || "")) {
+                if (userAuth?.division && !normalizedDiv.includes(lab.division || "")) {
                     return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
                 }
-                if (userAuth?.district && !normalizedDist.includes(report.lab.district || "")) {
+                if (userAuth?.district && !normalizedDist.includes(lab.district || "")) {
                     return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
                 }
             }

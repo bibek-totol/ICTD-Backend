@@ -174,8 +174,10 @@ model labs {
 
 model LabReport {
   id                String   @id @default(uuid())
-  labId             Int
-  lab               labs     @relation(fields: [labId], references: [id], onDelete: Cascade)
+  labId             Int?
+  lab               labs?     @relation(fields: [labId], references: [id], onDelete: Cascade)
+  ictdlLabId        Int?
+  ictdlLab          ictdl_labs? @relation(fields: [ictdlLabId], references: [id], onDelete: Cascade)
 
   basicRobotics     Int      @default(0)
   advancedRobotics  Int      @default(0)
@@ -194,6 +196,7 @@ model LabReport {
   updatedAt         DateTime @updatedAt
 
   @@index([labId])
+  @@index([ictdlLabId])
 }
 
 model ictdl_labs {
@@ -216,6 +219,7 @@ model ictdl_labs {
   
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  reports            LabReport[]
 
   @@index([division], map: "idx_ictdl_division")
   @@index([district], map: "idx_ictdl_district")

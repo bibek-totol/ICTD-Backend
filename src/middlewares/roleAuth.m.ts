@@ -69,10 +69,10 @@ export const AuthorizationMiddleware = async (
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id, role: decoded.role },
+      where: { id: decoded.id },
     });
 
-    if (!user) {
+    if (!user || user.role !== decoded.role) {
       return res.status(401).json({
         success: false,
         message: "Invalid session or user not found. Please log in again.",
@@ -86,8 +86,7 @@ export const AuthorizationMiddleware = async (
       });
     }
 
-    req.user = {
-      ...req.user,
+    (req as any).user = {
       role: decoded.role,
       userId: decoded.id,
       // Attach jurisdiction so controllers can enforce role-based data scoping

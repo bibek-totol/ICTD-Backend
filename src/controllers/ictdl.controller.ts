@@ -386,6 +386,7 @@ export const updateICTDLab = async (req: Request, res: Response) => {
 
 export const getICTDLFilterOptions = async (req: Request, res: Response) => {
     try {
+        const { division, district } = req.query;
         const user = (req as AppRequest).user;
         const where: any = {};
 
@@ -407,24 +408,32 @@ export const getICTDLFilterOptions = async (req: Request, res: Response) => {
             }
         }
 
+        // Dynamic filtering via query params
+        if (division && division !== "All") {
+            where.division = { in: normalizeJurisdiction(division as string) };
+        }
+        if (district && district !== "All") {
+            where.district = { in: normalizeJurisdiction(district as string) };
+        }
+
         const divisions = await prisma.ictdl_labs.findMany({
             distinct: ["division"],
             select: { division: true },
-            where: { ...where, division: { not: null, notIn: ["", " "] } },
+            where: { AND: [where, { division: { not: null, notIn: ["", " "] } }] },
             orderBy: { division: "asc" },
         });
 
         const districts = await prisma.ictdl_labs.findMany({
             distinct: ["district"],
             select: { district: true },
-            where: { ...where, district: { not: "", notIn: [" ", "null", "NULL"] } },
+            where: { AND: [where, { district: { not: "", notIn: [" ", "null", "NULL"] } }] },
             orderBy: { district: "asc" },
         });
 
         const upazilas = await prisma.ictdl_labs.findMany({
             distinct: ["upazila"],
             select: { upazila: true },
-            where: { ...where, upazila: { not: "", notIn: [" ", "null", "NULL"] } },
+            where: { AND: [where, { upazila: { not: "", notIn: [" ", "null", "NULL"] } }] },
             orderBy: { upazila: "asc" },
         });
 

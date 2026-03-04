@@ -18,8 +18,8 @@ const router = express.Router();
 // Bulk insert is public for migration
 router.post("/add/bulk", bulkICTDLInsert);
 router.get("/public", getICTDLLabsPublic);
-router.get("/filter-optionspublic", getICTDLFilterOptionsPublic);
-router.get("/:idpublic", getICTDLabByIdPublic);
+router.get("/filter-options/public", getICTDLFilterOptionsPublic);
+router.get("/:id/public", getICTDLabByIdPublic);
 
 
 
