@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bulkLabInsert = exports.getAllLabsUnifiedPublic = exports.getAllLabsUnified = exports.updateLab = exports.getFilterOptionsPublic = exports.getLabByIdPublic = exports.getLabsPublic = exports.getFilterOptions = exports.getLabById = exports.getLabs = void 0;
+exports.bulkLabInsert = exports.getAllLabsUnifiedPublic = exports.getAllLabsUnified = exports.updateLab = exports.getFilterOptionsPublic = exports.getLabByIdPublic = exports.getLabsPublic = exports.getUnifiedFilterOptions = exports.getFilterOptions = exports.getLabById = exports.getLabs = void 0;
 const prisma_config_1 = require("../configs/prisma.config");
 const AppError_util_1 = require("../utils/AppError.util");
 const client_1 = require("@prisma/client");
@@ -185,8 +185,10 @@ const getLabById = async (req, res) => {
 exports.getLabById = getLabById;
 const getFilterOptions = async (req, res) => {
     try {
+        const { division, district } = req.query;
         const user = req.user;
         const where = {};
+        // Base scoping by user role
         if (user?.role !== "SuperAdmin") {
             if (user?.role === "DistrictAdmin" && user.district) {
                 where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(user.district) };
@@ -211,28 +213,35 @@ const getFilterOptions = async (req, res) => {
                     where.upazila = user.upazila;
             }
         }
+        // Dynamic filtering via query params
+        if (division && division !== "All") {
+            where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(division) };
+        }
+        if (district && district !== "All") {
+            where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(district) };
+        }
         const divisions = await prisma_config_1.prisma.labs.findMany({
             distinct: ["division"],
             select: { division: true },
-            where: { ...where, division: { not: null, notIn: ["", " "] } },
+            where: { AND: [where, { division: { not: null, notIn: ["", " "] } }] },
             orderBy: { division: "asc" },
         });
         const districts = await prisma_config_1.prisma.labs.findMany({
             distinct: ["district"],
             select: { district: true },
-            where: { ...where, district: { not: null, notIn: ["", " "] } },
+            where: { AND: [where, { district: { not: null, notIn: ["", " "] } }] },
             orderBy: { district: "asc" },
         });
         const upazilas = await prisma_config_1.prisma.labs.findMany({
             distinct: ["upazila"],
             select: { upazila: true },
-            where: { ...where, upazila: { not: null, notIn: ["", " "] } },
+            where: { AND: [where, { upazila: { not: null, notIn: ["", " "] } }] },
             orderBy: { upazila: "asc" },
         });
         const labTypes = await prisma_config_1.prisma.labs.findMany({
             distinct: ["lab_type"],
             select: { lab_type: true },
-            where: { ...where, lab_type: { not: null } },
+            where: { AND: [where, { lab_type: { not: null } }] },
             orderBy: { lab_type: "asc" },
         });
         return res.status(200).json({
@@ -255,6 +264,75 @@ const getFilterOptions = async (req, res) => {
     }
 };
 exports.getFilterOptions = getFilterOptions;
+const getUnifiedFilterOptions = async (req, res) => {
+    try {
+        const { division, district } = req.query;
+        const user = req.user;
+        const where = {};
+        // Scoping
+        if (user?.role !== "SuperAdmin") {
+            if (user?.role === "DistrictAdmin" && user.district) {
+                where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(user.district) };
+            }
+            else if (user?.role === "DivisionAdmin" && user.division) {
+                where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(user.division) };
+            }
+            else if (user?.role === "LabAdmin") {
+                if (user.email) {
+                    where.email = { equals: user.email, mode: "insensitive" };
+                }
+                else {
+                    where.id = -1;
+                }
+            }
+            else {
+                if (user?.division)
+                    where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(user.division) };
+                if (user?.district)
+                    where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(user.district) };
+                if (user?.upazila)
+                    where.upazila = user.upazila;
+            }
+        }
+        if (division && division !== "All") {
+            where.division = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(division) };
+        }
+        if (district && district !== "All") {
+            where.district = { in: (0, jurisdiction_util_1.normalizeJurisdiction)(district) };
+        }
+        // Fetch from both tables
+        const [labsDiv, ictdlDiv, labsDist, ictdlDist, labsUpz, ictdlUpz, labsTypes] = await Promise.all([
+            prisma_config_1.prisma.labs.findMany({ distinct: ["division"], select: { division: true }, where: { AND: [where, { division: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.ictdl_labs.findMany({ distinct: ["division"], select: { division: true }, where: { AND: [where, { division: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.labs.findMany({ distinct: ["district"], select: { district: true }, where: { AND: [where, { district: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.ictdl_labs.findMany({ distinct: ["district"], select: { district: true }, where: { AND: [where, { district: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.labs.findMany({ distinct: ["upazila"], select: { upazila: true }, where: { AND: [where, { upazila: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.ictdl_labs.findMany({ distinct: ["upazila"], select: { upazila: true }, where: { AND: [where, { upazila: { notIn: ["", " "] } }] } }),
+            prisma_config_1.prisma.labs.findMany({ distinct: ["lab_type"], select: { lab_type: true }, where: { AND: [where, { lab_type: { not: null } }] } }),
+        ]);
+        const distinctDivisions = [...new Set([...labsDiv.map(d => d.division), ...ictdlDiv.map(d => d.division)])].filter(Boolean).sort();
+        const distinctDistricts = [...new Set([...labsDist.map(d => d.district), ...ictdlDist.map(d => d.district)])].filter(Boolean).sort();
+        const distinctUpazilas = [...new Set([...labsUpz.map(u => u.upazila), ...ictdlUpz.map(u => u.upazila)])].filter(Boolean).sort();
+        const distinctLabTypes = [...new Set([...labsTypes.map(l => l.lab_type), "ictdl"])].filter(Boolean).sort();
+        return res.status(200).json({
+            success: true,
+            data: {
+                divisions: distinctDivisions,
+                districts: distinctDistricts,
+                upazilas: distinctUpazilas,
+                labTypes: distinctLabTypes
+            },
+        });
+    }
+    catch (error) {
+        const errorObj = {
+            fnc: "getUnifiedFilterOptions",
+            error,
+        };
+        throw new AppError_util_1.AppError(errorObj);
+    }
+};
+exports.getUnifiedFilterOptions = getUnifiedFilterOptions;
 const getLabsPublic = async (req, res) => {
     try {
         const { division, district, upazila, labType, search } = req.query;

@@ -19,10 +19,17 @@ export function generateJwtToken(
     throw new Error("JWT_SECRET is not defined in environment variables");
   }
 
-  const token = jwt.sign(payload, secret, {
-    expiresIn: config.jwt_expires_in,
-    ...options,
-  });
+  // Build options in a typed-safe way; cast expiresIn to match jsonwebtoken types
+  const signOptions: SignOptions = {
+    ...(options || {}),
+    expiresIn: config.jwt_expires_in as unknown as SignOptions["expiresIn"],
+  };
+
+  const token = jwt.sign(
+    payload as string | object,
+    secret as jwt.Secret,
+    signOptions,
+  );
 
   return token;
 }

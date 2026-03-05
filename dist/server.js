@@ -15,6 +15,7 @@ const labReport_routes_1 = __importDefault(require("./routes/labReport.routes"))
 const ictdl_routes_1 = __importDefault(require("./routes/ictdl.routes"));
 const complaint_routes_1 = __importDefault(require("./routes/complaint.routes"));
 const announcement_routes_1 = __importDefault(require("./routes/announcement.routes"));
+const notice_routes_1 = __importDefault(require("./routes/notice.routes"));
 const file_routes_1 = __importDefault(require("./routes/file.routes"));
 // import authenticateMiddleware from "./middlewares/auth.m";
 const logger_m_1 = require("./middlewares/logger.m");
@@ -49,7 +50,7 @@ app.use((0, cors_1.default)({
         }
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Range"],
     credentials: true,
 }));
 app.use(logger_m_1.requestLogger);
@@ -69,6 +70,7 @@ app.use("/api/v1/lab-reports", labReport_routes_1.default);
 app.use("/api/v1/ictdl", ictdl_routes_1.default);
 app.use("/api/v1/complaints", complaint_routes_1.default);
 app.use("/api/v1/announcements", announcement_routes_1.default);
+app.use("/api/v1/notices", notice_routes_1.default);
 app.use("/api/v1/files", file_routes_1.default);
 app.use(errorHandler_m_1.errorHandler);
 app.listen(serverPort, async () => {

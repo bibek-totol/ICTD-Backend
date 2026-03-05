@@ -11,16 +11,19 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const checkUserAgent_util_1 = __importDefault(require("./checkUserAgent.util"));
 const ReqType_enum_1 = require("../interfaces_and_types/ReqType.enum");
 const cookies_option_1 = require("../configs/options/cookies.option");
+const env_config_1 = __importDefault(require("../configs/env.config"));
 const JWT_SECRET = process.env.JWT_SECRET;
 function generateJwtToken(payload, options = {}) {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
         throw new Error("JWT_SECRET is not defined in environment variables");
     }
-    const token = jsonwebtoken_1.default.sign(payload, secret, {
-        expiresIn: "7d",
-        ...options,
-    });
+    // Build options in a typed-safe way; cast expiresIn to match jsonwebtoken types
+    const signOptions = {
+        ...(options || {}),
+        expiresIn: env_config_1.default.jwt_expires_in,
+    };
+    const token = jsonwebtoken_1.default.sign(payload, secret, signOptions);
     return token;
 }
 function assignJwtToken(req, res, payload) {
