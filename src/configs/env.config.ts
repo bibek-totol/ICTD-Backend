@@ -29,7 +29,8 @@ const config = {
   port: process.env.PORT as string,
   node_env: process.env.NODE_ENV as string,
   jwt_secret: process.env.JWT_SECRET as string,
-  jwt_expires_in: (process.env.JWT_EXPIRES_IN as string) || "7d",
+  /** Access token expiry (e.g. "5h", "7d"). User must re-login after this. */
+  jwt_expires_in: (process.env.JWT_EXPIRES_IN as string) || "5h",
   add_user_support: checkAddUserSupport(),
   email_verification_expiry: Number(process.env.EMAIL_VERIFICATION_EXPIRY),
   

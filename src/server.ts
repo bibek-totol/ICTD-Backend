@@ -10,6 +10,7 @@ import LabReportRouter from "./routes/labReport.routes";
 import ICTDLRouter from "./routes/ictdl.routes";
 import ComplaintRouter from "./routes/complaint.routes";
 import AnnouncementRouter from "./routes/announcement.routes";
+import NoticeRouter from "./routes/notice.routes";
 import FileRouter from "./routes/file.routes";
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from "./middlewares/logger.m";
@@ -67,12 +68,14 @@ app.get("/", (req: Request, res: Response) => {
 // app.use("/api/v1/auth", AuthRouter);
 // app.use(authenticateMiddleware);
 app.use("/api/v1/auth", AuthRouter);
+
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/labs", LabRouter);
 app.use("/api/v1/lab-reports", LabReportRouter);
 app.use("/api/v1/ictdl", ICTDLRouter);
 app.use("/api/v1/complaints", ComplaintRouter);
 app.use("/api/v1/announcements", AnnouncementRouter);
+app.use("/api/v1/notices", NoticeRouter);
 app.use("/api/v1/files", FileRouter);
 
 app.use(errorHandler);

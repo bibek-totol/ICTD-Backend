@@ -6,6 +6,8 @@ import {
   assignCookieOptions,
   deleteCookieOptions,
 } from "../configs/options/cookies.option";
+import config from "../configs/env.config";
+
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export function generateJwtToken(
@@ -18,7 +20,7 @@ export function generateJwtToken(
   }
 
   const token = jwt.sign(payload, secret, {
-    expiresIn: "7d",
+    expiresIn: config.jwt_expires_in,
     ...options,
   });
 

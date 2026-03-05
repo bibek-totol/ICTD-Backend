@@ -263,3 +263,13 @@ model Announcement {
   updatedAt DateTime @updatedAt
 }
 
+model Notice {
+  id        Int      @id @default(autoincrement())
+  serial    Int      @default(0)
+  title     String
+  fileUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
