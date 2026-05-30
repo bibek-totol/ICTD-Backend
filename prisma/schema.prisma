@@ -132,6 +132,7 @@ model User {
   updatedAt              DateTime  @updatedAt
 
   labs                   labs[]
+  classReportsSubmitted  ClassReport[] @relation("ClassReportSubmittedBy")
 }
 
 
@@ -169,7 +170,8 @@ model labs {
   @@index([upazila], map: "idx_labs_upazila")
   @@index([userId])
 
-  reports    LabReport[]
+  reports      LabReport[]
+  classReports ClassReport[]
 }
 
 model LabReport {
@@ -199,6 +201,44 @@ model LabReport {
   @@index([ictdlLabId])
 }
 
+model ClassReport {
+  id                        Int      @id @default(autoincrement())
+  labId                     Int?
+  lab                       labs?     @relation(fields: [labId], references: [id], onDelete: Cascade)
+  ictdlLabId                Int?
+  ictdlLab                  ictdl_labs? @relation(fields: [ictdlLabId], references: [id], onDelete: Cascade)
+  submittedByUserId         String?  @db.Uuid
+  submittedBy               User?    @relation("ClassReportSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
+
+  instituteAddress          String?
+  labEstablishedAt          String?
+  computerCount             Int      @default(0)
+  otherEquipmentCount       String?
+  digitalLabStatus          String?
+  digitalLabStatusDetails   String?
+  renovationRouteStatus     String?
+  renovationRouteStatusDetails String?
+  renovationRouteDetails    String?
+  labClassRegister          String?
+  labClassRegisterDetails   String?
+  labCameraStatus           String?
+  labCameraStatusDetails    String?
+  internetConnectionStatus  String?
+  internetConnectionStatusDetails String?
+  internetConnectionDetails String?
+  sofRoboticsStatus         String?
+  currentStatus             String?
+  reportSummary             String?
+  reportDetails             Json?
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([labId])
+  @@index([ictdlLabId])
+  @@index([submittedByUserId])
+}
+
 model ictdl_labs {
   id                 Int      @id @default(autoincrement())
   division           String?  @db.VarChar(255)
@@ -220,6 +260,7 @@ model ictdl_labs {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   reports            LabReport[]
+  classReports       ClassReport[]
 
   @@index([division], map: "idx_ictdl_division")
   @@index([district], map: "idx_ictdl_district")
@@ -271,5 +312,35 @@ model Notice {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Vendor {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(500)
+  address   String
+  phone     String   @db.VarChar(50)
+  serial    Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([serial])
+  @@index([isActive])
+}
+
+model ContactMessage {
+  id          Int      @id @default(autoincrement())
+  firstName   String   @db.VarChar(255)
+  lastName    String?  @db.VarChar(255)
+  email       String   @db.VarChar(255)
+  phone       String?  @db.VarChar(50)
+  subject     String   @db.VarChar(500)
+  message     String
+  status      String   @default("Unread") @db.VarChar(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 

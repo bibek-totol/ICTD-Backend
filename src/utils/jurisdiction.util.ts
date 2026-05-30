@@ -95,14 +95,21 @@ const createInverseMap = (map: Record<string, string>) => {
 export const divisionMapBn = createInverseMap(divisionMap);
 export const districtMapBn = createInverseMap(districtMap);
 
+export const upazilaMap: Record<string, string> = {
+    "Lakshmipur Sadar": "লক্ষ্মীপুর সদর",
+    "Laxmipur Sadar": "লক্ষ্মীপুর সদর",
+};
+
+export const upazilaMapBn = createInverseMap(upazilaMap);
+
 export const translateToBn = (name: string | null | undefined): string | null => {
     if (!name) return null;
-    return divisionMap[name] || districtMap[name] || name;
+    return divisionMap[name] || districtMap[name] || upazilaMap[name] || name;
 };
 
 export const translateToEn = (name: string | null | undefined): string | null => {
     if (!name) return null;
-    return divisionMapBn[name] || districtMapBn[name] || name;
+    return divisionMapBn[name] || districtMapBn[name] || upazilaMapBn[name] || name;
 };
 
 export const normalizeJurisdiction = (name: string | null | undefined): string[] => {

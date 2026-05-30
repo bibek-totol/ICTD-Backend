@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS "Vendor" (
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR(500) NOT NULL,
+  "address" TEXT NOT NULL,
+  "phone" VARCHAR(50) NOT NULL,
+  "serial" INTEGER NOT NULL DEFAULT 0,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "Vendor_serial_idx"
+  ON "Vendor" ("serial");
+
+CREATE INDEX IF NOT EXISTS "Vendor_isActive_idx"
+  ON "Vendor" ("isActive");
