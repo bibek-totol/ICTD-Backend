@@ -2,6 +2,10 @@ SuperAdmin Useremail: bbibekbhowmick2001@gmail.com
 SuperAdmin Password: 123456aA@
 # ICTD Backend Application
 
+Production report storage:
+- IT Equipment & Functionality Report uses the `LabReport` table through `/api/v1/lab-reports`.
+- Class activity reports for SoF and ICTD labs use the `ClassReport` table through `/api/v1/class-reports`.
+
 This backend application has been dockerized for easy deployment. You can run this application on your local computer using the following methods.
 
 ## Method 1: Clone Both Projects and Run Locally Using Docker Compose
