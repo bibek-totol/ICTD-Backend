@@ -86,7 +86,13 @@ app.use("/api/v1/files", FileRouter);
 
 app.use(errorHandler);
 
-app.listen(serverPort, async () => {
-  console.log(`🚀 Server started at http://localhost:${serverPort}`);
-  await connectDatabase();
-});
+export default app;
+
+if (process.env.VERCEL !== "1") {
+  app.listen(serverPort, async () => {
+    console.log(`Server started at http://localhost:${serverPort}`);
+    await connectDatabase();
+  });
+} else {
+  connectDatabase();
+}
