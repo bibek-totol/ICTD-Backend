@@ -79,7 +79,13 @@ app.use("/api/v1/vendors", vendor_routes_1.default);
 app.use("/api/v1/contact-messages", contactMessage_routes_1.default);
 app.use("/api/v1/files", file_routes_1.default);
 app.use(errorHandler_m_1.errorHandler);
-app.listen(serverPort, async () => {
-    console.log(`🚀 Server started at http://localhost:${serverPort}`);
-    await (0, prisma_config_1.connectDatabase)();
-});
+exports.default = app;
+if (process.env.VERCEL !== "1") {
+    app.listen(serverPort, async () => {
+        console.log(`Server started at http://localhost:${serverPort}`);
+        await (0, prisma_config_1.connectDatabase)();
+    });
+}
+else {
+    (0, prisma_config_1.connectDatabase)();
+}

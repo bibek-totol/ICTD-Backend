@@ -255,10 +255,10 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
       success: true,
       message: "Filter options retrieved successfully",
       data: {
-        divisions: divisions.map((d) => d.division).filter(Boolean),
-        districts: districts.map((d) => d.district).filter(Boolean),
-        upazilas: upazilas.map((u) => u.upazila).filter(Boolean),
-        labTypes: labTypes.map((l) => l.lab_type).filter(Boolean),
+        divisions: divisions.map((d: any) => d.division).filter(Boolean),
+        districts: districts.map((d: any) => d.district).filter(Boolean),
+        upazilas: upazilas.map((u: any) => u.upazila).filter(Boolean),
+        labTypes: labTypes.map((l: any) => l.lab_type).filter(Boolean),
       },
     });
   } catch (error) {
@@ -313,10 +313,10 @@ export const getUnifiedFilterOptions = async (req: AppRequest, res: Response) =>
       prisma.labs.findMany({ distinct: ["lab_type"], select: { lab_type: true }, where: { AND: [where, { lab_type: { not: null } }] } }),
     ]);
 
-    const distinctDivisions = [...new Set([...labsDiv.map(d => d.division), ...ictdlDiv.map(d => d.division)])].filter(Boolean).sort();
-    const distinctDistricts = [...new Set([...labsDist.map(d => d.district), ...ictdlDist.map(d => d.district)])].filter(Boolean).sort();
-    const distinctUpazilas = [...new Set([...labsUpz.map(u => u.upazila), ...ictdlUpz.map(u => u.upazila)])].filter(Boolean).sort();
-    const distinctLabTypes = [...new Set([...labsTypes.map(l => l.lab_type), "ictdl"])].filter(Boolean).sort();
+    const distinctDivisions = [...new Set([...labsDiv.map((d: any) => d.division), ...ictdlDiv.map((d: any) => d.division)])].filter(Boolean).sort();
+    const distinctDistricts = [...new Set([...labsDist.map((d: any) => d.district), ...ictdlDist.map((d: any) => d.district)])].filter(Boolean).sort();
+    const distinctUpazilas = [...new Set([...labsUpz.map((u: any) => u.upazila), ...ictdlUpz.map((u: any) => u.upazila)])].filter(Boolean).sort();
+    const distinctLabTypes = [...new Set([...labsTypes.map((l: any) => l.lab_type), "ictdl"])].filter(Boolean).sort();
 
     return res.status(200).json({
       success: true,
@@ -462,10 +462,10 @@ export const getFilterOptionsPublic = async (req: Request, res: Response) => {
       success: true,
       message: "Public filter options retrieved successfully",
       data: {
-        divisions: divisions.map((d) => d.division).filter(Boolean),
-        districts: districts.map((d) => d.district).filter(Boolean),
-        upazilas: upazilas.map((u) => u.upazila).filter(Boolean),
-        labTypes: labTypes.map((l) => l.lab_type).filter(Boolean),
+        divisions: divisions.map((d: any) => d.division).filter(Boolean),
+        districts: districts.map((d: any) => d.district).filter(Boolean),
+        upazilas: upazilas.map((u: any) => u.upazila).filter(Boolean),
+        labTypes: labTypes.map((l: any) => l.lab_type).filter(Boolean),
       },
     });
   } catch (error) {
@@ -600,7 +600,7 @@ export const updateLab = async (req: Request, res: Response) => {
     }
 
     // Update with Transaction
-    const updatedLab = await prisma.$transaction(async (tx) => {
+    const updatedLab = await prisma.$transaction(async (tx: any) => {
       // 1. Update Related User record
       const userUpdateData: any = {};
       if (head !== undefined) userUpdateData.userName = head;
@@ -710,7 +710,7 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
     });
 
     const unifiedLabs = [
-      ...labs.map((l) => ({
+      ...labs.map((l: any) => ({
         id: `lab-${l.id}`,
         institute: l.institute || "",
         division: l.division || "",
@@ -718,7 +718,7 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
         upazila: l.upazila || "",
         type: "SRD/SOF",
       })),
-      ...ictdlLabs.map((l) => ({
+      ...ictdlLabs.map((l: any) => ({
         id: `ictdl-${l.id}`,
         institute: l.institute || "",
         division: l.division || "",
@@ -765,7 +765,7 @@ export const getAllLabsUnifiedPublic = async (req: Request, res: Response) => {
     });
 
     const unifiedLabs = [
-      ...labs.map((l) => ({
+      ...labs.map((l: any) => ({
         id: `lab-${l.id}`,
         institute: l.institute || "",
         division: l.division || "",
@@ -773,7 +773,7 @@ export const getAllLabsUnifiedPublic = async (req: Request, res: Response) => {
         upazila: l.upazila || "",
         type: "SRD/SOF",
       })),
-      ...ictdlLabs.map((l) => ({
+      ...ictdlLabs.map((l: any) => ({
         id: `ictdl-${l.id}`,
         institute: l.institute || "",
         division: l.division || "",

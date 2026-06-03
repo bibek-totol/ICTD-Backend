@@ -13,6 +13,9 @@ interface AppRequest extends Request {
     email?: string | null;
   };
   lang?: string;
+  // Ensure query and params are explicitly recognized if inheritance fails for some reason
+  query: Request['query'];
+  params: Request['params'];
 }
 
 export default AppRequest;
