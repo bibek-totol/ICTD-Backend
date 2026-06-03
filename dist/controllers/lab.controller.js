@@ -310,10 +310,10 @@ const getUnifiedFilterOptions = async (req, res) => {
             prisma_config_1.prisma.ictdl_labs.findMany({ distinct: ["upazila"], select: { upazila: true }, where: { AND: [where, { upazila: { notIn: ["", " "] } }] } }),
             prisma_config_1.prisma.labs.findMany({ distinct: ["lab_type"], select: { lab_type: true }, where: { AND: [where, { lab_type: { not: null } }] } }),
         ]);
-        const distinctDivisions = [...new Set([...labsDiv.map(d => d.division), ...ictdlDiv.map(d => d.division)])].filter(Boolean).sort();
-        const distinctDistricts = [...new Set([...labsDist.map(d => d.district), ...ictdlDist.map(d => d.district)])].filter(Boolean).sort();
-        const distinctUpazilas = [...new Set([...labsUpz.map(u => u.upazila), ...ictdlUpz.map(u => u.upazila)])].filter(Boolean).sort();
-        const distinctLabTypes = [...new Set([...labsTypes.map(l => l.lab_type), "ictdl"])].filter(Boolean).sort();
+        const distinctDivisions = [...new Set([...labsDiv.map((d) => d.division), ...ictdlDiv.map((d) => d.division)])].filter(Boolean).sort();
+        const distinctDistricts = [...new Set([...labsDist.map((d) => d.district), ...ictdlDist.map((d) => d.district)])].filter(Boolean).sort();
+        const distinctUpazilas = [...new Set([...labsUpz.map((u) => u.upazila), ...ictdlUpz.map((u) => u.upazila)])].filter(Boolean).sort();
+        const distinctLabTypes = [...new Set([...labsTypes.map((l) => l.lab_type), "ictdl"])].filter(Boolean).sort();
         return res.status(200).json({
             success: true,
             data: {
