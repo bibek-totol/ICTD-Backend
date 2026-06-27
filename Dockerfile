@@ -5,13 +5,11 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN npm ci
-
-COPY prisma ./prisma
-RUN npx prisma generate
 
 COPY . .
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma generate && npm run dev"]
+CMD ["npm", "run", "dev"]
