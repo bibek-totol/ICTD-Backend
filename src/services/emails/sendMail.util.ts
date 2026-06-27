@@ -1,8 +1,8 @@
-import nodemailer from "nodemailer";
-import fs from "fs";
-import path from "path";
-import config from "../../configs/env.config";
-import { AppError } from "../../utils/AppError.util";
+import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import config from '../../configs/env.config';
+import { AppError } from '../../utils/AppError.util';
 
 const sendMailTemplate = `<!--
 * This email was built using Tabular.
@@ -1229,15 +1229,12 @@ function generateSixDigitCode() {
   const firstDigit = Math.floor(Math.random() * 9) + 1;
   const remainingDigits = Math.floor(Math.random() * 100000)
     .toString()
-    .padStart(5, "0");
+    .padStart(5, '0');
 
   return `${firstDigit}${remainingDigits}`;
 }
 
-async function compileHTML(
-  templateName: string,
-  replacements: Record<string, any>,
-) {
+async function compileHTML(templateName: string, replacements: Record<string, any>) {
   // const templatePath = path.join(__dirname, templateName);
 
   // if (!fs.existsSync(templatePath)) {
@@ -1248,7 +1245,7 @@ async function compileHTML(
   let html = sendMailTemplate;
 
   for (const [key, value] of Object.entries(replacements)) {
-    html = html.replace(new RegExp(`{{${key}}}`, "g"), String(value));
+    html = html.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
   }
 
   return html;
@@ -1268,25 +1265,23 @@ export const sendMailWithVerificationCode = async (receiverEmail: string) => {
 
     const emailVerificationCode = generateSixDigitCode();
 
-    const ModifiedEmailVerificationCode = emailVerificationCode
-      .split("")
-      .join(" ");
+    const ModifiedEmailVerificationCode = emailVerificationCode.split('').join(' ');
 
     const mailOption = {
       from: process.env.SENDER_MAIL,
       to: receiverEmail,
-      subject: "Email verification",
-      html: await compileHTML("sendEmailCode.html", {
+      subject: 'Email verification',
+      html: await compileHTML('sendEmailCode.html', {
         emailVerificationCode: ModifiedEmailVerificationCode,
         emailVerificationCodeExpireTime: config.email_verification_expiry,
       }),
     };
 
     const info = await transporter.sendMail(mailOption);
-    console.log("Message sent:", info.messageId);
+    console.log('Message sent:', info.messageId);
 
     return emailVerificationCode;
   } catch (error: any) {
-    throw new AppError({ fnc: "sendMailWithVerificationCode", error });
+    throw new AppError({ fnc: 'sendMailWithVerificationCode', error });
   }
 };

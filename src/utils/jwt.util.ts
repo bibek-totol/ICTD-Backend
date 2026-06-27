@@ -1,35 +1,25 @@
-import { Request, Response } from "express";
-import jwt, { SignOptions } from "jsonwebtoken";
-import checkUserAgent from "./checkUserAgent.util";
-import { ReqTypeEnum } from "../interfaces_and_types/ReqType.enum";
-import {
-  assignCookieOptions,
-  deleteCookieOptions,
-} from "../configs/options/cookies.option";
-import config from "../configs/env.config";
+import { Request, Response } from 'express';
+import jwt, { SignOptions } from 'jsonwebtoken';
+import checkUserAgent from './checkUserAgent.util';
+import { ReqTypeEnum } from '../interfaces_and_types/ReqType.enum';
+import { assignCookieOptions, deleteCookieOptions } from '../configs/options/cookies.option';
+import config from '../configs/env.config';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
-export function generateJwtToken(
-  payload: object,
-  options: SignOptions = {},
-): string {
+export function generateJwtToken(payload: object, options: SignOptions = {}): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error("JWT_SECRET is not defined in environment variables");
+    throw new Error('JWT_SECRET is not defined in environment variables');
   }
 
   // Build options in a typed-safe way; cast expiresIn to match jsonwebtoken types
   const signOptions: SignOptions = {
     ...(options || {}),
-    expiresIn: config.jwt_expires_in as unknown as SignOptions["expiresIn"],
+    expiresIn: config.jwt_expires_in as unknown as SignOptions['expiresIn'],
   };
 
-  const token = jwt.sign(
-    payload as string | object,
-    secret as jwt.Secret,
-    signOptions,
-  );
+  const token = jwt.sign(payload as string | object, secret as jwt.Secret, signOptions);
 
   return token;
 }
@@ -49,20 +39,20 @@ export function assignJwtToken(req: Request, res: Response, payload: object) {
       // return bearer token for mobile, postman, APIs
       return {
         success: true,
-        type: "Bearer",
+        type: 'Bearer',
         token,
-        message: "Token assigned via bearer",
+        message: 'Token assigned via bearer',
       };
     }
 
     // when it is web
-    res.cookie("token", token, assignCookieOptions);
+    res.cookie('token', token, assignCookieOptions);
 
     return {
       success: true,
-      type: "cookie",
+      type: 'cookie',
       token, // Return token so frontend can use it in headers as backup
-      message: "Token assigned via cookies",
+      message: 'Token assigned via cookies',
     };
   } catch (error: any) {
     return {
@@ -80,12 +70,12 @@ export function deleteJwtToken(req: Request, res: Response) {
     const isBrowser = checkUserAgent(req);
 
     if (isBrowser) {
-      res.cookie("token", "", deleteCookieOptions);
+      res.cookie('token', '', deleteCookieOptions);
     }
 
     return {
       success: true,
-      message: "Token cleared successfully",
+      message: 'Token cleared successfully',
     };
   } catch (error: any) {
     return {

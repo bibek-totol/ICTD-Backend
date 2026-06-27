@@ -1,6 +1,6 @@
 // src/utils/AppError.util.ts
-import { ErrorSeverity, ErrorSource } from "@prisma/client";
-import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
+import { ErrorSeverity, ErrorSource } from '@prisma/client';
+import { AppErrorPayload } from '../interfaces_and_types/AppError.interface';
 
 export class AppError extends Error {
   statusCode: number;
@@ -13,9 +13,7 @@ export class AppError extends Error {
   constructor(payload: AppErrorPayload) {
     const resolvedMessage =
       payload.msg ||
-      (payload.error instanceof Error
-        ? payload.error.message
-        : "Unexpected error occurred");
+      (payload.error instanceof Error ? payload.error.message : 'Unexpected error occurred');
 
     super(resolvedMessage);
 
@@ -30,10 +28,7 @@ export class AppError extends Error {
       this.originalError = payload.error;
     }
 
-    this.severity =
-      this.statusCode >= 500
-        ? ErrorSeverity.CRITICAL
-        : ErrorSeverity.MEDIUM;
+    this.severity = this.statusCode >= 500 ? ErrorSeverity.CRITICAL : ErrorSeverity.MEDIUM;
 
     this.source = ErrorSource.API;
     this.isOperational = true;

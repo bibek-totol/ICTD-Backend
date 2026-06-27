@@ -9,6 +9,10 @@
     "vercel-build": "prisma generate && prisma migrate deploy && tsc",
     "postinstall": "prisma generate",
     "start": "node ./dist/server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -17,12 +21,14 @@
     "cleanup:missing-files": "tsx ./src/scripts/cleanupMissingFiles.ts",
     "fix:pdf-type": "tsx ./src/scripts/fixPdfResourceType.ts",
     "migrate:pdfs": "tsx ./src/scripts/migrateCloudinaryPdfs.ts",
-    "fix:pdf-inline": "tsx ./src/scripts/fixPdfInlineDisplay.ts"
+    "fix:pdf-inline": "tsx ./src/scripts/fixPdfInlineDisplay.ts",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -33,18 +39,27 @@
     "@types/pg": "^8.16.0",
     "@types/uuid": "^10.0.0",
     "@types/winston": "^2.4.4",
-    "prisma": "^7.4.1",
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.5",
+    "prisma": "^7.8.0",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.62.0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.4.1",
+    "@prisma/client": "^7.8.0",
     "@types/multer": "^2.0.0",
-    "axios": "^1.13.6",
+    "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
-    "cloudinary": "^1.41.3",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -52,13 +67,28 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^9.0.1",
     "nodemon": "^3.1.11",
     "pg": "^8.16.3",
     "sql-formatter": "^15.6.12",
     "ua-parser-js": "^2.0.7",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
+  },
+  "overrides": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
+    "tar": "^6.2.1",
+    "minimatch": "^9.0.3",
+    "flatted": "^3.3.1",
+    "cloudinary": "^2.10.0",
+    "nodemailer": "^9.0.1",
+    "prisma": "^7.8.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

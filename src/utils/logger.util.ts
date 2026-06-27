@@ -1,13 +1,13 @@
-import winston from "winston";
-import { PrismaVisitorTransport } from "./prismaVisitor.transport";
+import winston from 'winston';
+import { PrismaVisitorTransport } from './prismaVisitor.transport';
 
 const { combine, timestamp, json, colorize, printf } = winston.format;
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const appLogger = winston.createLogger({
-  level: isProduction ? "info" : "debug",
-  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), json()),
+  level: isProduction ? 'info' : 'debug',
+  format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), json()),
   transports: [
     // 🔹 Visitor logs (file)
     // new winston.transports.File({
@@ -37,7 +37,7 @@ if (!isProduction) {
         colorize(),
         printf(({ level, message, timestamp, ...meta }) => {
           return `[${timestamp}] ${level}: ${message} ${
-            Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
+            Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
           }`;
         }),
       ),

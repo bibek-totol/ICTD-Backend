@@ -1,11 +1,11 @@
-import { Request, Response } from "express";
-import { prisma } from "../configs/prisma.config";
-import { AppError } from "../utils/AppError.util";
-import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
+import { Request, Response } from 'express';
+import { prisma } from '../configs/prisma.config';
+import { AppError } from '../utils/AppError.util';
+import { AppErrorPayload } from '../interfaces_and_types/AppError.interface';
 
 const parseBoolean = (value: unknown) => {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value !== "false";
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value !== 'false';
   return true;
 };
 
@@ -21,7 +21,7 @@ export const createVendor = async (req: Request, res: Response) => {
     if (!name || !address || !phone) {
       return res.status(400).json({
         success: false,
-        message: "Vendor name, address, and phone are required",
+        message: 'Vendor name, address, and phone are required',
       });
     }
 
@@ -37,11 +37,11 @@ export const createVendor = async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: "Vendor created successfully",
+      message: 'Vendor created successfully',
       data: vendor,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "createVendor", error };
+    const errorObj: AppErrorPayload = { fnc: 'createVendor', error };
     throw new AppError(errorObj);
   }
 };
@@ -49,7 +49,7 @@ export const createVendor = async (req: Request, res: Response) => {
 export const getVendors = async (req: Request, res: Response) => {
   try {
     const vendors = await prisma.vendor.findMany({
-      orderBy: [{ serial: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ serial: 'asc' }, { createdAt: 'desc' }],
     });
 
     res.status(200).json({
@@ -57,7 +57,7 @@ export const getVendors = async (req: Request, res: Response) => {
       data: vendors,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getVendors", error };
+    const errorObj: AppErrorPayload = { fnc: 'getVendors', error };
     throw new AppError(errorObj);
   }
 };
@@ -66,7 +66,7 @@ export const getActiveVendors = async (req: Request, res: Response) => {
   try {
     const vendors = await prisma.vendor.findMany({
       where: { isActive: true },
-      orderBy: [{ serial: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ serial: 'asc' }, { createdAt: 'desc' }],
     });
 
     res.status(200).json({
@@ -74,7 +74,7 @@ export const getActiveVendors = async (req: Request, res: Response) => {
       data: vendors,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getActiveVendors", error };
+    const errorObj: AppErrorPayload = { fnc: 'getActiveVendors', error };
     throw new AppError(errorObj);
   }
 };
@@ -91,7 +91,7 @@ export const updateVendor = async (req: Request, res: Response) => {
     if (!existing) {
       return res.status(404).json({
         success: false,
-        message: "Vendor not found",
+        message: 'Vendor not found',
       });
     }
 
@@ -108,11 +108,11 @@ export const updateVendor = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: "Vendor updated successfully",
+      message: 'Vendor updated successfully',
       data: updated,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "updateVendor", error };
+    const errorObj: AppErrorPayload = { fnc: 'updateVendor', error };
     throw new AppError(errorObj);
   }
 };
@@ -128,7 +128,7 @@ export const deleteVendor = async (req: Request, res: Response) => {
     if (!existing) {
       return res.status(404).json({
         success: false,
-        message: "Vendor not found",
+        message: 'Vendor not found',
       });
     }
 
@@ -138,10 +138,10 @@ export const deleteVendor = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: "Vendor deleted successfully",
+      message: 'Vendor deleted successfully',
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "deleteVendor", error };
+    const errorObj: AppErrorPayload = { fnc: 'deleteVendor', error };
     throw new AppError(errorObj);
   }
 };

@@ -1,10 +1,10 @@
-import Transport from "winston-transport";
-import {prisma} from "../configs/prisma.config";
-import { LogLevel } from "@prisma/client";
+import Transport from 'winston-transport';
+import { prisma } from '../configs/prisma.config';
+import { LogLevel } from '@prisma/client';
 
 export class PrismaVisitorTransport extends Transport {
   async log(info: any, callback: () => void) {
-    setImmediate(() => this.emit("logged", info));
+    setImmediate(() => this.emit('logged', info));
 
     try {
       const {
@@ -37,14 +37,14 @@ export class PrismaVisitorTransport extends Transport {
           userAgent,
           device,
 
-          service: service ?? "api",
-          environment: environment ?? process.env.NODE_ENV ?? "development",
-          timezone: timezone ?? "Asia/Dhaka",
+          service: service ?? 'api',
+          environment: environment ?? process.env.NODE_ENV ?? 'development',
+          timezone: timezone ?? 'Asia/Dhaka',
         },
       });
     } catch (error) {
       // Never throw inside logger
-      console.error("VisitorLog DB write failed:", error);
+      console.error('VisitorLog DB write failed:', error);
     }
 
     callback();

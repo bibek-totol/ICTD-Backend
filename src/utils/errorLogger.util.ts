@@ -1,14 +1,10 @@
 // src/utils/errorLogger.util.ts
-import { Request } from "express";
-import { AppError } from "./AppError.util";
-import { prisma } from "../configs/prisma.config";
-import { ErrorSeverity, ErrorSource } from "@prisma/client";
+import { Request } from 'express';
+import { AppError } from './AppError.util';
+import { prisma } from '../configs/prisma.config';
+import { ErrorSeverity, ErrorSource } from '@prisma/client';
 
-export const logErrorToDB = async (
-  err: Error,
-  req: Request,
-  statusCode: number
-) => {
+export const logErrorToDB = async (err: Error, req: Request, statusCode: number) => {
   try {
     const appError = err instanceof AppError ? err : null;
 
@@ -24,20 +20,19 @@ export const logErrorToDB = async (
         path: req.originalUrl,
 
         ip: req.ip ?? null,
-        userAgent: req.headers["user-agent"] ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
 
         // function name stored safely
         errorCode: appError?.functionName ?? null,
 
-        service: "api",
-        environment: process.env.NODE_ENV ?? "development",
-        timezone: "Asia/Dhaka",
+        service: 'api',
+        environment: process.env.NODE_ENV ?? 'development',
+        timezone: 'Asia/Dhaka',
 
-        ...(process.env.NODE_ENV === "development" &&
-          err.stack && { stackTrace: err.stack }),
+        ...(process.env.NODE_ENV === 'development' && err.stack && { stackTrace: err.stack }),
       },
     });
   } catch (loggingError) {
-    console.error("Failed to persist error log", loggingError);
+    console.error('Failed to persist error log', loggingError);
   }
 };

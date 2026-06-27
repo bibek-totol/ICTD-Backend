@@ -1,16 +1,12 @@
-import { Request, Response, NextFunction } from "express";
-import AppRequest from "../interfaces_and_types/AppRequest.interface";
-import { randomUUID } from "crypto";
-import { appLogger } from "../utils/logger.util";
-import { Role } from "@prisma/client";
-const TIME_ZONE = "Asia/Dhaka";
+import { Request, Response, NextFunction } from 'express';
+import AppRequest from '../interfaces_and_types/AppRequest.interface';
+import { randomUUID } from 'crypto';
+import { appLogger } from '../utils/logger.util';
+import { Role } from '@prisma/client';
+const TIME_ZONE = 'Asia/Dhaka';
 
-export const requestLogger = (
-  req: AppRequest,
-  res: Response,
-  next: NextFunction,
-) => {
-  if (req.path === "/favicon.ico") {
+export const requestLogger = (req: AppRequest, res: Response, next: NextFunction) => {
+  if (req.path === '/favicon.ico') {
     return next();
   }
 
@@ -20,17 +16,17 @@ export const requestLogger = (
   (req as any).requestId = requestId;
 
   const ip =
-    (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
     req.socket.remoteAddress ||
-    "unknown";
+    'unknown';
 
-  const userAgent = req.headers["user-agent"] || "unknown";
+  const userAgent = req.headers['user-agent'] || 'unknown';
   const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
 
-  res.on("finish", () => {
+  res.on('finish', () => {
     const durationMs = Date.now() - start;
 
-    appLogger.info("HTTP Request", {
+    appLogger.info('HTTP Request', {
       requestId,
       method: req.method,
       path: req.originalUrl,
@@ -39,9 +35,9 @@ export const requestLogger = (
 
       ip,
       userAgent,
-      device: isMobile ? "mobile" : "desktop",
+      device: isMobile ? 'mobile' : 'desktop',
 
-      service: "api",
+      service: 'api',
       environment: process.env.NODE_ENV,
       timezone: TIME_ZONE,
     });
@@ -49,7 +45,7 @@ export const requestLogger = (
 
   req.user = {
     role: Role.Anonymous,
-    userId: "",
+    userId: '',
     requestId: requestId,
   };
 

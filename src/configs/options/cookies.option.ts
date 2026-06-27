@@ -1,4 +1,4 @@
-import { CookieOptions } from "express";
+import { CookieOptions } from 'express';
 
 /** Cookie and token lifetime: 5 hours (security: force re-login after 5h) */
 const COOKIE_EXPIRE_HOURS = 5;
@@ -7,14 +7,14 @@ const COOKIE_MAX_AGE_MS = COOKIE_EXPIRE_HOURS * 60 * 60 * 1000;
 export const assignCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: true, // Always true for cross-site cookies
-  sameSite: "none", // Required for cross-site cookies (Vercel)
+  sameSite: 'none', // Required for cross-site cookies (Vercel)
   maxAge: COOKIE_MAX_AGE_MS,
 };
 
 export const deleteCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: true,
-  sameSite: "none",
+  sameSite: 'none',
   maxAge: 0,
 };
 

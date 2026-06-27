@@ -1,24 +1,23 @@
-import express, { Request, Response } from "express";
-import { prisma } from "../configs/prisma.config";
-import bcrypt from "bcryptjs";
-import { assignJwtToken, deleteJwtToken } from "../utils/jwt.util";
-import { CookiesAuthPayLoad } from "../interfaces_and_types/CookiesPayLoad.interface";
-import { ReqTypeEnum } from "../interfaces_and_types/ReqType.enum";
-import { AppError } from "../utils/AppError.util";
-import { sendMailWithVerificationCode } from "../services/emails/sendMail.util";
-import { isEmail } from "../utils/checkUserInput.utils";
-import { generateUsersManagementKey } from "../utils/generateKey.util";
-import config from "../configs/env.config";
-import { PageState, Role } from "@prisma/client";
+import { Request, Response } from 'express';
+import { prisma } from '../configs/prisma.config';
+import bcrypt from 'bcryptjs';
+import { assignJwtToken, deleteJwtToken } from '../utils/jwt.util';
+import { CookiesAuthPayLoad } from '../interfaces_and_types/CookiesPayLoad.interface';
+import { AppError } from '../utils/AppError.util';
+import { sendMailWithVerificationCode } from '../services/emails/sendMail.util';
+import { isEmail } from '../utils/checkUserInput.utils';
+import { generateUsersManagementKey } from '../utils/generateKey.util';
+import config from '../configs/env.config';
+import { PageState, Role } from '@prisma/client';
 
 export const signin = async (req: Request, res: Response) => {
   try {
     let { email, password } = req.body;
 
-    if (typeof email !== "string" || typeof password !== "string") {
+    if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({
         success: false,
-        message: "Email and password must be type string",
+        message: 'Email and password must be type string',
       });
     }
 
@@ -28,34 +27,32 @@ export const signin = async (req: Request, res: Response) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: 'Email and password are required',
       });
     }
 
     if (!isEmail(email)) {
       return res.status(400).json({
         success: false,
-        message: "email must be type email",
+        message: 'email must be type email',
       });
     }
-
 
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-
       return res.status(404).json({
         success: false,
-        message: "User not exist",
+        message: 'User not exist',
       });
     }
 
     if (!user.isVerified) {
       return res.status(409).json({
         success: false,
-        message: "User is not verified",
+        message: 'User is not verified',
       });
     }
 
@@ -64,7 +61,7 @@ export const signin = async (req: Request, res: Response) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: 'Invalid credentials',
       });
     }
 
@@ -80,16 +77,16 @@ export const signin = async (req: Request, res: Response) => {
 
     if (!typeCheck.success) {
       throw new AppError({
-        fnc: "signin generateJwtToken",
+        fnc: 'signin generateJwtToken',
         error: typeCheck?.error,
       });
     }
 
     // typeCheck.type === "Bearer" ---> MobileApp
-    if (typeCheck.type === "Bearer") {
+    if (typeCheck.type === 'Bearer') {
       return res.status(200).json({
         success: true,
-        message: "Logged in successfully",
+        message: 'Logged in successfully',
         token: typeCheck.token,
         data: {
           id: user.id,
@@ -111,7 +108,7 @@ export const signin = async (req: Request, res: Response) => {
     // typeCheck.type === "cookie" ---> WebApp
     return res.status(200).json({
       success: true,
-      message: "Logged in successfully",
+      message: 'Logged in successfully',
       token: typeCheck.token, // Include token for local persistence/headers
       data: {
         id: user.id,
@@ -129,7 +126,7 @@ export const signin = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    throw new AppError({ fnc: "signin", error });
+    throw new AppError({ fnc: 'signin', error });
   }
 };
 
@@ -137,10 +134,10 @@ export const signup = async (req: Request, res: Response) => {
   try {
     let { email, password } = req.body;
 
-    if (typeof email !== "string" || typeof password !== "string") {
+    if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({
         success: false,
-        message: "Email and password must be type string",
+        message: 'Email and password must be type string',
       });
     }
 
@@ -150,14 +147,14 @@ export const signup = async (req: Request, res: Response) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: 'Email and password are required',
       });
     }
 
     if (!isEmail(email)) {
       return res.status(400).json({
         success: false,
-        message: "email must be type email",
+        message: 'email must be type email',
       });
     }
 
@@ -170,7 +167,7 @@ export const signup = async (req: Request, res: Response) => {
       // forbidden status code
       return res.status(404).json({
         success: false,
-        message: "User not exist",
+        message: 'User not exist',
       });
     }
 
@@ -178,7 +175,7 @@ export const signup = async (req: Request, res: Response) => {
     if (user.pageState !== PageState.VerifiedEmail) {
       return res.status(404).json({
         success: false,
-        message: "please verify your email",
+        message: 'please verify your email',
       });
     }
 
@@ -204,12 +201,12 @@ export const signup = async (req: Request, res: Response) => {
 
     if (!typeCheck.success) {
       throw new AppError({
-        fnc: "signin generateJwtToken",
+        fnc: 'signin generateJwtToken',
         error: typeCheck?.error,
       });
     }
 
-    if (user.role === "SuperAdmin") {
+    if (user.role === 'SuperAdmin') {
       await prisma.user.update({
         where: {
           email: email,
@@ -230,10 +227,10 @@ export const signup = async (req: Request, res: Response) => {
     });
 
     // typeCheck.type === "Bearer" ----> MobileApp
-    if (typeCheck.type === "Bearer") {
+    if (typeCheck.type === 'Bearer') {
       return res.status(200).json({
         success: true,
-        message: "Logged in successfully",
+        message: 'Logged in successfully',
         token: typeCheck.token,
         data: {
           id: user.id,
@@ -255,7 +252,7 @@ export const signup = async (req: Request, res: Response) => {
     // typeCheck.type === "cookie" ----> WebApp
     return res.status(201).json({
       success: true,
-      message: "User Register successfully",
+      message: 'User Register successfully',
       token: typeCheck.token, // Include token for local persistence/headers
       data: {
         id: user.id,
@@ -273,7 +270,7 @@ export const signup = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    throw new AppError({ fnc: "signup", error });
+    throw new AppError({ fnc: 'signup', error });
   }
 };
 
@@ -281,10 +278,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
   try {
     let { email } = req.body;
 
-    if (typeof email !== "string") {
+    if (typeof email !== 'string') {
       return res.status(400).json({
         success: false,
-        message: "Email must be type string",
+        message: 'Email must be type string',
       });
     }
 
@@ -293,14 +290,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: 'Email is required',
       });
     }
 
     if (!isEmail(email)) {
       return res.status(400).json({
         success: false,
-        message: "email must be type email",
+        message: 'email must be type email',
       });
     }
 
@@ -312,14 +309,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
     if (user.isVerified) {
       return res.status(409).json({
         success: false,
-        message: "User already verified",
+        message: 'User already verified',
       });
     }
 
@@ -339,40 +336,41 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
-      message: "verification code sent in email",
+      message: 'verification code sent in email',
       data: {
         email: user?.email,
       },
     });
   } catch (error: any) {
-    throw new AppError({ fnc: "verifyEmail", error });
+    throw new AppError({ fnc: 'verifyEmail', error });
   }
 };
 
 export const verifyEmailCode = async (req: Request, res: Response) => {
   try {
-    let { email, emailCode } = req.body;
+    let { email } = req.body;
+    const { emailCode } = req.body;
 
-    if (typeof email === "string") {
+    if (typeof email === 'string') {
       email = email.toLowerCase().trim();
     }
 
     if (
-      typeof email !== "string" ||
-      email.trim() === "" ||
-      typeof emailCode !== "string" ||
-      emailCode.trim() === ""
+      typeof email !== 'string' ||
+      email.trim() === '' ||
+      typeof emailCode !== 'string' ||
+      emailCode.trim() === ''
     ) {
       return res.status(400).json({
         success: false,
-        message: "emailCode and email are required",
+        message: 'emailCode and email are required',
       });
     }
 
     if (!isEmail(email)) {
       return res.status(400).json({
         success: false,
-        message: "email must be type email",
+        message: 'email must be type email',
       });
     }
 
@@ -381,21 +379,21 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User does not exist",
+        message: 'User does not exist',
       });
     }
 
     if (user.isVerified) {
       return res.status(409).json({
         success: false,
-        message: "User already verified",
+        message: 'User already verified',
       });
     }
 
     if (user.pageState !== PageState.SendVerifiedEmailCode) {
       return res.status(404).json({
         success: false,
-        message: "please verify your email",
+        message: 'please verify your email',
       });
     }
 
@@ -404,21 +402,21 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
     if (!user.verificationCode) {
       return res.status(400).json({
         success: false,
-        message: "No verification code found",
+        message: 'No verification code found',
       });
     }
 
     if (user.verificationExpiry && new Date() > user.verificationExpiry) {
       return res.status(410).json({
         success: false,
-        message: "Verification code expired",
+        message: 'Verification code expired',
       });
     }
 
     if (emailCode !== user.verificationCode) {
       return res.status(400).json({
         success: false,
-        message: "Invalid email code",
+        message: 'Invalid email code',
       });
     }
 
@@ -434,11 +432,11 @@ export const verifyEmailCode = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Email code verified successfully",
+      message: 'Email code verified successfully',
     });
   } catch (error: any) {
     throw new AppError({
-      fnc: "checkEmailCode",
+      fnc: 'checkEmailCode',
       error,
     });
   }
@@ -448,7 +446,7 @@ export const getMe = async (req: any, res: Response) => {
   try {
     const userId = req.user?.userId;
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
     const user = await prisma.user.findUnique({
@@ -471,16 +469,16 @@ export const getMe = async (req: any, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     return res.status(200).json({
       success: true,
-      message: "User profile retrieved",
+      message: 'User profile retrieved',
       data: user,
     });
   } catch (error: any) {
-    throw new AppError({ fnc: "getMe", error });
+    throw new AppError({ fnc: 'getMe', error });
   }
 };
 export const logout = async (req: Request, res: Response) => {
@@ -488,9 +486,9 @@ export const logout = async (req: Request, res: Response) => {
     deleteJwtToken(req, res);
     return res.status(200).json({
       success: true,
-      message: "Logged out successfully",
+      message: 'Logged out successfully',
     });
   } catch (error: any) {
-    throw new AppError({ fnc: "logout", error });
+    throw new AppError({ fnc: 'logout', error });
   }
 };

@@ -1,4 +1,4 @@
-import { LabTypes } from "@prisma/client";
+import { LabTypes } from '@prisma/client';
 
 export interface NestedUser {
   userName: string | null;

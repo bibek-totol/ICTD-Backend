@@ -1,13 +1,13 @@
-import { Request, Response } from "express";
-import { prisma } from "../configs/prisma.config";
-import { AppError } from "../utils/AppError.util";
-import { AppErrorPayload } from "../interfaces_and_types/AppError.interface";
-import { LabTypes } from "@prisma/client";
-import cloudinary from "../configs/cloudinary.config";
-import AppRequest from "../interfaces_and_types/AppRequest.interface";
+import { Request, Response } from 'express';
+import { prisma } from '../configs/prisma.config';
+import { AppError } from '../utils/AppError.util';
+import { AppErrorPayload } from '../interfaces_and_types/AppError.interface';
+import { LabTypes } from '@prisma/client';
+import cloudinary from '../configs/cloudinary.config';
+import AppRequest from '../interfaces_and_types/AppRequest.interface';
 
-import { normalizeJurisdiction } from "../utils/jurisdiction.util";
-import { t } from "../utils/translate.util";
+import { normalizeJurisdiction } from '../utils/jurisdiction.util';
+import { t } from '../utils/translate.util';
 
 const mapLabToFrontend = (lab: any) => ({
   id: lab.id,
@@ -35,18 +35,18 @@ export const getLabs = async (req: AppRequest, res: Response) => {
     const whereClause: any = {};
 
     // Professional Scoping & Language Normalization
-    if (user?.role !== "SuperAdmin") {
-      if (user?.role === "DistrictAdmin") {
+    if (user?.role !== 'SuperAdmin') {
+      if (user?.role === 'DistrictAdmin') {
         if (user.district) {
           whereClause.district = { in: normalizeJurisdiction(user.district) };
         }
-      } else if (user?.role === "DivisionAdmin") {
+      } else if (user?.role === 'DivisionAdmin') {
         if (user.division) {
           whereClause.division = { in: normalizeJurisdiction(user.division) };
         }
-      } else if (user?.role === "LabAdmin") {
+      } else if (user?.role === 'LabAdmin') {
         if (user.email) {
-          whereClause.email = { equals: user.email, mode: "insensitive" };
+          whereClause.email = { equals: user.email, mode: 'insensitive' };
         } else {
           whereClause.id = -1;
         }
@@ -59,33 +59,33 @@ export const getLabs = async (req: AppRequest, res: Response) => {
     }
 
     // Secondary Filters (Query params)
-    if (division && division !== "All") {
+    if (division && division !== 'All') {
       const normalized = normalizeJurisdiction(division as string);
       whereClause.division = { in: normalized };
     }
 
-    if (district && district !== "All") {
+    if (district && district !== 'All') {
       const normalized = normalizeJurisdiction(district as string);
       whereClause.district = { in: normalized };
     }
 
-    if (upazila && upazila !== "All") {
+    if (upazila && upazila !== 'All') {
       whereClause.upazila = upazila as string;
     }
 
-    if (labType && labType !== "All") {
+    if (labType && labType !== 'All') {
       whereClause.lab_type = labType as string;
     }
 
     if (search) {
       whereClause.OR = [
-        { institute: { contains: search as string, mode: "insensitive" } },
-        { head: { contains: search as string, mode: "insensitive" } },
-        { user: { userName: { contains: search as string, mode: "insensitive" } } },
-        { user: { email: { contains: search as string, mode: "insensitive" } } },
-        { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
-        { division: { contains: search as string, mode: "insensitive" } },
-        { district: { contains: search as string, mode: "insensitive" } },
+        { institute: { contains: search as string, mode: 'insensitive' } },
+        { head: { contains: search as string, mode: 'insensitive' } },
+        { user: { userName: { contains: search as string, mode: 'insensitive' } } },
+        { user: { email: { contains: search as string, mode: 'insensitive' } } },
+        { user: { phoneNumber: { contains: search as string, mode: 'insensitive' } } },
+        { division: { contains: search as string, mode: 'insensitive' } },
+        { district: { contains: search as string, mode: 'insensitive' } },
       ];
     }
 
@@ -102,7 +102,7 @@ export const getLabs = async (req: AppRequest, res: Response) => {
         },
       },
       orderBy: {
-        id: "asc",
+        id: 'asc',
       },
     });
 
@@ -110,13 +110,13 @@ export const getLabs = async (req: AppRequest, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: t("labs_retrieved", req.lang),
+      message: t('labs_retrieved', req.lang),
       data: mappedLabs,
       count: mappedLabs.length,
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "getLabs",
+      fnc: 'getLabs',
       error,
     };
     throw new AppError(errorObj);
@@ -146,30 +146,37 @@ export const getLabById = async (req: AppRequest, res: Response) => {
     if (!lab) {
       return res.status(404).json({
         success: false,
-        message: "Lab not found",
+        message: 'Lab not found',
       });
     }
 
     // Jurisdiction & Role Check
     const userAuth = req.user;
-    if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.role === "LabAdmin") {
+    if (userAuth?.role !== 'SuperAdmin') {
+      if (userAuth?.role === 'LabAdmin') {
         if (!lab.email || lab.email.toLowerCase() !== userAuth.email?.toLowerCase()) {
-          return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access denied: this is not your lab' });
         }
       } else {
-
         const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
         const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
 
-        if (userAuth?.division && !normalizedDiv.includes((lab.division as string) || "")) {
-          return res.status(403).json({ success: false, message: "Access denied: outside your division" });
+        if (userAuth?.division && !normalizedDiv.includes((lab.division as string) || '')) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access denied: outside your division' });
         }
-        if (userAuth?.district && !normalizedDist.includes((lab.district as string) || "")) {
-          return res.status(403).json({ success: false, message: "Access denied: outside your district" });
+        if (userAuth?.district && !normalizedDist.includes((lab.district as string) || '')) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access denied: outside your district' });
         }
         if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
-          return res.status(403).json({ success: false, message: "Access denied: outside your upazila" });
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access denied: outside your upazila' });
         }
       }
     }
@@ -178,12 +185,12 @@ export const getLabById = async (req: AppRequest, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Lab retrieved successfully",
+      message: 'Lab retrieved successfully',
       data: mappedLab,
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "getLabById",
+      fnc: 'getLabById',
       error,
     };
     throw new AppError(errorObj);
@@ -197,14 +204,14 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
     const where: any = {};
 
     // Base scoping by user role
-    if (user?.role !== "SuperAdmin") {
-      if (user?.role === "DistrictAdmin" && user.district) {
+    if (user?.role !== 'SuperAdmin') {
+      if (user?.role === 'DistrictAdmin' && user.district) {
         where.district = { in: normalizeJurisdiction(user.district) };
-      } else if (user?.role === "DivisionAdmin" && user.division) {
+      } else if (user?.role === 'DivisionAdmin' && user.division) {
         where.division = { in: normalizeJurisdiction(user.division) };
-      } else if (user?.role === "LabAdmin") {
+      } else if (user?.role === 'LabAdmin') {
         if (user.email) {
-          where.email = { equals: user.email, mode: "insensitive" };
+          where.email = { equals: user.email, mode: 'insensitive' };
         } else {
           where.id = -1;
         }
@@ -216,44 +223,44 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
     }
 
     // Dynamic filtering via query params
-    if (division && division !== "All") {
+    if (division && division !== 'All') {
       where.division = { in: normalizeJurisdiction(division as string) };
     }
-    if (district && district !== "All") {
+    if (district && district !== 'All') {
       where.district = { in: normalizeJurisdiction(district as string) };
     }
 
     const divisions = await prisma.labs.findMany({
-      distinct: ["division"],
+      distinct: ['division'],
       select: { division: true },
-      where: { AND: [where, { division: { not: null, notIn: ["", " "] } }] },
-      orderBy: { division: "asc" },
+      where: { AND: [where, { division: { not: null, notIn: ['', ' '] } }] },
+      orderBy: { division: 'asc' },
     });
 
     const districts = await prisma.labs.findMany({
-      distinct: ["district"],
+      distinct: ['district'],
       select: { district: true },
-      where: { AND: [where, { district: { not: null, notIn: ["", " "] } }] },
-      orderBy: { district: "asc" },
+      where: { AND: [where, { district: { not: null, notIn: ['', ' '] } }] },
+      orderBy: { district: 'asc' },
     });
 
     const upazilas = await prisma.labs.findMany({
-      distinct: ["upazila"],
+      distinct: ['upazila'],
       select: { upazila: true },
-      where: { AND: [where, { upazila: { not: null, notIn: ["", " "] } }] },
-      orderBy: { upazila: "asc" },
+      where: { AND: [where, { upazila: { not: null, notIn: ['', ' '] } }] },
+      orderBy: { upazila: 'asc' },
     });
 
     const labTypes = await prisma.labs.findMany({
-      distinct: ["lab_type"],
+      distinct: ['lab_type'],
       select: { lab_type: true },
       where: { AND: [where, { lab_type: { not: null } }] },
-      orderBy: { lab_type: "asc" },
+      orderBy: { lab_type: 'asc' },
     });
 
     return res.status(200).json({
       success: true,
-      message: "Filter options retrieved successfully",
+      message: 'Filter options retrieved successfully',
       data: {
         divisions: divisions.map((d: any) => d.division).filter(Boolean),
         districts: districts.map((d: any) => d.district).filter(Boolean),
@@ -263,7 +270,7 @@ export const getFilterOptions = async (req: AppRequest, res: Response) => {
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "getFilterOptions",
+      fnc: 'getFilterOptions',
       error,
     };
     throw new AppError(errorObj);
@@ -277,14 +284,14 @@ export const getUnifiedFilterOptions = async (req: AppRequest, res: Response) =>
     const where: any = {};
 
     // Scoping
-    if (user?.role !== "SuperAdmin") {
-      if (user?.role === "DistrictAdmin" && user.district) {
+    if (user?.role !== 'SuperAdmin') {
+      if (user?.role === 'DistrictAdmin' && user.district) {
         where.district = { in: normalizeJurisdiction(user.district) };
-      } else if (user?.role === "DivisionAdmin" && user.division) {
+      } else if (user?.role === 'DivisionAdmin' && user.division) {
         where.division = { in: normalizeJurisdiction(user.division) };
-      } else if (user?.role === "LabAdmin") {
+      } else if (user?.role === 'LabAdmin') {
         if (user.email) {
-          where.email = { equals: user.email, mode: "insensitive" };
+          where.email = { equals: user.email, mode: 'insensitive' };
         } else {
           where.id = -1;
         }
@@ -295,28 +302,74 @@ export const getUnifiedFilterOptions = async (req: AppRequest, res: Response) =>
       }
     }
 
-    if (division && division !== "All") {
+    if (division && division !== 'All') {
       where.division = { in: normalizeJurisdiction(division as string) };
     }
-    if (district && district !== "All") {
+    if (district && district !== 'All') {
       where.district = { in: normalizeJurisdiction(district as string) };
     }
 
     // Fetch from both tables
-    const [labsDiv, ictdlDiv, labsDist, ictdlDist, labsUpz, ictdlUpz, labsTypes] = await Promise.all([
-      prisma.labs.findMany({ distinct: ["division"], select: { division: true }, where: { AND: [where, { division: { notIn: ["", " "] } }] } }),
-      prisma.ictdl_labs.findMany({ distinct: ["division"], select: { division: true }, where: { AND: [where, { division: { notIn: ["", " "] } }] } }),
-      prisma.labs.findMany({ distinct: ["district"], select: { district: true }, where: { AND: [where, { district: { notIn: ["", " "] } }] } }),
-      prisma.ictdl_labs.findMany({ distinct: ["district"], select: { district: true }, where: { AND: [where, { district: { notIn: ["", " "] } }] } }),
-      prisma.labs.findMany({ distinct: ["upazila"], select: { upazila: true }, where: { AND: [where, { upazila: { notIn: ["", " "] } }] } }),
-      prisma.ictdl_labs.findMany({ distinct: ["upazila"], select: { upazila: true }, where: { AND: [where, { upazila: { notIn: ["", " "] } }] } }),
-      prisma.labs.findMany({ distinct: ["lab_type"], select: { lab_type: true }, where: { AND: [where, { lab_type: { not: null } }] } }),
-    ]);
+    const [labsDiv, ictdlDiv, labsDist, ictdlDist, labsUpz, ictdlUpz, labsTypes] =
+      await Promise.all([
+        prisma.labs.findMany({
+          distinct: ['division'],
+          select: { division: true },
+          where: { AND: [where, { division: { notIn: ['', ' '] } }] },
+        }),
+        prisma.ictdl_labs.findMany({
+          distinct: ['division'],
+          select: { division: true },
+          where: { AND: [where, { division: { notIn: ['', ' '] } }] },
+        }),
+        prisma.labs.findMany({
+          distinct: ['district'],
+          select: { district: true },
+          where: { AND: [where, { district: { notIn: ['', ' '] } }] },
+        }),
+        prisma.ictdl_labs.findMany({
+          distinct: ['district'],
+          select: { district: true },
+          where: { AND: [where, { district: { notIn: ['', ' '] } }] },
+        }),
+        prisma.labs.findMany({
+          distinct: ['upazila'],
+          select: { upazila: true },
+          where: { AND: [where, { upazila: { notIn: ['', ' '] } }] },
+        }),
+        prisma.ictdl_labs.findMany({
+          distinct: ['upazila'],
+          select: { upazila: true },
+          where: { AND: [where, { upazila: { notIn: ['', ' '] } }] },
+        }),
+        prisma.labs.findMany({
+          distinct: ['lab_type'],
+          select: { lab_type: true },
+          where: { AND: [where, { lab_type: { not: null } }] },
+        }),
+      ]);
 
-    const distinctDivisions = [...new Set([...labsDiv.map((d: any) => d.division), ...ictdlDiv.map((d: any) => d.division)])].filter(Boolean).sort();
-    const distinctDistricts = [...new Set([...labsDist.map((d: any) => d.district), ...ictdlDist.map((d: any) => d.district)])].filter(Boolean).sort();
-    const distinctUpazilas = [...new Set([...labsUpz.map((u: any) => u.upazila), ...ictdlUpz.map((u: any) => u.upazila)])].filter(Boolean).sort();
-    const distinctLabTypes = [...new Set([...labsTypes.map((l: any) => l.lab_type), "ictdl"])].filter(Boolean).sort();
+    const distinctDivisions = [
+      ...new Set([...labsDiv.map((d: any) => d.division), ...ictdlDiv.map((d: any) => d.division)]),
+    ]
+      .filter(Boolean)
+      .sort();
+    const distinctDistricts = [
+      ...new Set([
+        ...labsDist.map((d: any) => d.district),
+        ...ictdlDist.map((d: any) => d.district),
+      ]),
+    ]
+      .filter(Boolean)
+      .sort();
+    const distinctUpazilas = [
+      ...new Set([...labsUpz.map((u: any) => u.upazila), ...ictdlUpz.map((u: any) => u.upazila)]),
+    ]
+      .filter(Boolean)
+      .sort();
+    const distinctLabTypes = [...new Set([...labsTypes.map((l: any) => l.lab_type), 'ictdl'])]
+      .filter(Boolean)
+      .sort();
 
     return res.status(200).json({
       success: true,
@@ -324,12 +377,12 @@ export const getUnifiedFilterOptions = async (req: AppRequest, res: Response) =>
         divisions: distinctDivisions,
         districts: distinctDistricts,
         upazilas: distinctUpazilas,
-        labTypes: distinctLabTypes
+        labTypes: distinctLabTypes,
       },
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "getUnifiedFilterOptions",
+      fnc: 'getUnifiedFilterOptions',
       error,
     };
     throw new AppError(errorObj);
@@ -341,29 +394,29 @@ export const getLabsPublic = async (req: Request, res: Response) => {
     const { division, district, upazila, labType, search } = req.query;
     const whereClause: any = {};
 
-    if (division && division !== "All") {
+    if (division && division !== 'All') {
       const normalized = normalizeJurisdiction(division as string);
       whereClause.division = { in: normalized };
     }
-    if (district && district !== "All") {
+    if (district && district !== 'All') {
       const normalized = normalizeJurisdiction(district as string);
       whereClause.district = { in: normalized };
     }
-    if (upazila && upazila !== "All") {
+    if (upazila && upazila !== 'All') {
       whereClause.upazila = upazila as string;
     }
-    if (labType && labType !== "All") {
+    if (labType && labType !== 'All') {
       whereClause.lab_type = labType as string;
     }
     if (search) {
       whereClause.OR = [
-        { institute: { contains: search as string, mode: "insensitive" } },
-        { head: { contains: search as string, mode: "insensitive" } },
-        { user: { userName: { contains: search as string, mode: "insensitive" } } },
-        { user: { email: { contains: search as string, mode: "insensitive" } } },
-        { user: { phoneNumber: { contains: search as string, mode: "insensitive" } } },
-        { division: { contains: search as string, mode: "insensitive" } },
-        { district: { contains: search as string, mode: "insensitive" } },
+        { institute: { contains: search as string, mode: 'insensitive' } },
+        { head: { contains: search as string, mode: 'insensitive' } },
+        { user: { userName: { contains: search as string, mode: 'insensitive' } } },
+        { user: { email: { contains: search as string, mode: 'insensitive' } } },
+        { user: { phoneNumber: { contains: search as string, mode: 'insensitive' } } },
+        { division: { contains: search as string, mode: 'insensitive' } },
+        { district: { contains: search as string, mode: 'insensitive' } },
       ];
     }
 
@@ -379,18 +432,18 @@ export const getLabsPublic = async (req: Request, res: Response) => {
           },
         },
       },
-      orderBy: { id: "asc" },
+      orderBy: { id: 'asc' },
     });
 
     const mappedLabs = labs.map(mapLabToFrontend);
     return res.status(200).json({
       success: true,
-      message: t("labs_retrieved", (req as any).lang),
+      message: t('labs_retrieved', (req as any).lang),
       data: mappedLabs,
       count: mappedLabs.length,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getLabsPublic", error };
+    const errorObj: AppErrorPayload = { fnc: 'getLabsPublic', error };
     throw new AppError(errorObj);
   }
 };
@@ -413,17 +466,17 @@ export const getLabByIdPublic = async (req: Request, res: Response) => {
     });
 
     if (!lab) {
-      return res.status(404).json({ success: false, message: "Lab not found" });
+      return res.status(404).json({ success: false, message: 'Lab not found' });
     }
 
     const mappedLab = mapLabToFrontend(lab);
     return res.status(200).json({
       success: true,
-      message: "Public lab retrieved successfully",
+      message: 'Public lab retrieved successfully',
       data: mappedLab,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getLabByIdPublic", error };
+    const errorObj: AppErrorPayload = { fnc: 'getLabByIdPublic', error };
     throw new AppError(errorObj);
   }
 };
@@ -431,36 +484,36 @@ export const getLabByIdPublic = async (req: Request, res: Response) => {
 export const getFilterOptionsPublic = async (req: Request, res: Response) => {
   try {
     const divisions = await prisma.labs.findMany({
-      distinct: ["division"],
+      distinct: ['division'],
       select: { division: true },
-      where: { division: { not: null, notIn: ["", " "] } },
-      orderBy: { division: "asc" },
+      where: { division: { not: null, notIn: ['', ' '] } },
+      orderBy: { division: 'asc' },
     });
 
     const districts = await prisma.labs.findMany({
-      distinct: ["district"],
+      distinct: ['district'],
       select: { district: true },
-      where: { district: { not: null, notIn: ["", " "] } },
-      orderBy: { district: "asc" },
+      where: { district: { not: null, notIn: ['', ' '] } },
+      orderBy: { district: 'asc' },
     });
 
     const upazilas = await prisma.labs.findMany({
-      distinct: ["upazila"],
+      distinct: ['upazila'],
       select: { upazila: true },
-      where: { upazila: { not: null, notIn: ["", " "] } },
-      orderBy: { upazila: "asc" },
+      where: { upazila: { not: null, notIn: ['', ' '] } },
+      orderBy: { upazila: 'asc' },
     });
 
     const labTypes = await prisma.labs.findMany({
-      distinct: ["lab_type"],
+      distinct: ['lab_type'],
       select: { lab_type: true },
       where: { lab_type: { not: null } },
-      orderBy: { lab_type: "asc" },
+      orderBy: { lab_type: 'asc' },
     });
 
     return res.status(200).json({
       success: true,
-      message: "Public filter options retrieved successfully",
+      message: 'Public filter options retrieved successfully',
       data: {
         divisions: divisions.map((d: any) => d.division).filter(Boolean),
         districts: districts.map((d: any) => d.district).filter(Boolean),
@@ -469,7 +522,7 @@ export const getFilterOptionsPublic = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getFilterOptionsPublic", error };
+    const errorObj: AppErrorPayload = { fnc: 'getFilterOptionsPublic', error };
     throw new AppError(errorObj);
   }
 };
@@ -477,7 +530,19 @@ export const getFilterOptionsPublic = async (req: Request, res: Response) => {
 export const updateLab = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { division, district, upazila, seat, head, email, mobile, alt_mobile, lat, long, deletedImages } = req.body;
+    const {
+      division,
+      district,
+      upazila,
+      seat,
+      head,
+      email,
+      mobile,
+      alt_mobile,
+      lat,
+      long,
+      deletedImages,
+    } = req.body;
     const files = (req as any).files;
 
     const labId = parseInt(id as string);
@@ -491,34 +556,44 @@ export const updateLab = async (req: Request, res: Response) => {
     if (!lab) {
       return res.status(404).json({
         success: false,
-        message: "Lab not found",
+        message: 'Lab not found',
       });
     }
 
     // Jurisdiction & Role Check
     const userAuth = (req as AppRequest).user;
-    if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.role === "LabAdmin") {
+    if (userAuth?.role !== 'SuperAdmin') {
+      if (userAuth?.role === 'LabAdmin') {
         if (!lab.email || lab.email.toLowerCase() !== userAuth.email?.toLowerCase()) {
-          return res.status(403).json({ success: false, message: "Access denied: this is not your lab" });
+          return res
+            .status(403)
+            .json({ success: false, message: 'Access denied: this is not your lab' });
         }
-      } else if (userAuth?.role === "DistrictAdmin") {
+      } else if (userAuth?.role === 'DistrictAdmin') {
         const normalizedDist = userAuth.district ? normalizeJurisdiction(userAuth.district) : [];
-        if (!normalizedDist.includes(lab.district || "")) {
-          return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+        if (!normalizedDist.includes(lab.district || '')) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Unauthorized: outside your district' });
         }
       } else {
         const normalizedDiv = userAuth?.division ? normalizeJurisdiction(userAuth.division) : [];
         const normalizedDist = userAuth?.district ? normalizeJurisdiction(userAuth.district) : [];
 
-        if (userAuth?.division && !normalizedDiv.includes(lab.division || "")) {
-          return res.status(403).json({ success: false, message: "Unauthorized: outside your division" });
+        if (userAuth?.division && !normalizedDiv.includes(lab.division || '')) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Unauthorized: outside your division' });
         }
-        if (userAuth?.district && !normalizedDist.includes(lab.district || "")) {
-          return res.status(403).json({ success: false, message: "Unauthorized: outside your district" });
+        if (userAuth?.district && !normalizedDist.includes(lab.district || '')) {
+          return res
+            .status(403)
+            .json({ success: false, message: 'Unauthorized: outside your district' });
         }
         if (userAuth?.upazila && lab.upazila !== userAuth.upazila) {
-          return res.status(403).json({ success: false, message: "Unauthorized: outside your upazila" });
+          return res
+            .status(403)
+            .json({ success: false, message: 'Unauthorized: outside your upazila' });
         }
       }
     }
@@ -535,10 +610,13 @@ export const updateLab = async (req: Request, res: Response) => {
       const bodyValue = req.body[fieldName];
       if (bodyValue) {
         const processValue = (val: any) => {
-          if (typeof val === "string") {
+          if (typeof val === 'string') {
             const trimmed = val.trim();
-            if (trimmed === "") return;
-            const parts = trimmed.split(",").map(p => p.trim()).filter(p => p !== "");
+            if (trimmed === '') return;
+            const parts = trimmed
+              .split(',')
+              .map((p) => p.trim())
+              .filter((p) => p !== '');
             rawImages = [...rawImages, ...parts];
           }
         };
@@ -555,7 +633,9 @@ export const updateLab = async (req: Request, res: Response) => {
         rawImages = [...rawImages, ...uploadedUrls];
       }
 
-      const cleanedImages = [...new Set(rawImages)].filter(img => typeof img === "string" && img !== "");
+      const cleanedImages = [...new Set(rawImages)].filter(
+        (img) => typeof img === 'string' && img !== '',
+      );
       return cleanedImages.slice(0, 2);
     };
 
@@ -574,7 +654,7 @@ export const updateLab = async (req: Request, res: Response) => {
 
         const existingImages = new Set([
           ...(lab.labImages || []),
-          ...(lab.institutionImages || [])
+          ...(lab.institutionImages || []),
         ]);
 
         for (const imageUrl of imagesToDelete) {
@@ -585,7 +665,7 @@ export const updateLab = async (req: Request, res: Response) => {
             const parts = imageUrl.split('/');
             const uploadIndex = parts.indexOf('upload');
             if (uploadIndex !== -1) {
-              let publicIdParts = parts.slice(uploadIndex + 1);
+              const publicIdParts = parts.slice(uploadIndex + 1);
               if (publicIdParts[0].match(/^v\d+$/)) publicIdParts.shift();
               const publicId = publicIdParts.join('/').split('.')[0];
               await cloudinary.uploader.destroy(publicId);
@@ -595,7 +675,7 @@ export const updateLab = async (req: Request, res: Response) => {
           }
         }
       } catch (e) {
-        console.error("❌ Error processing deletedImages:", e);
+        console.error('❌ Error processing deletedImages:', e);
       }
     }
 
@@ -619,7 +699,7 @@ export const updateLab = async (req: Request, res: Response) => {
       const labUpdateData: any = {};
 
       // Only SuperAdmin can change jurisdiction
-      if (userAuth?.role === "SuperAdmin") {
+      if (userAuth?.role === 'SuperAdmin') {
         if (division !== undefined) labUpdateData.division = division;
         if (district !== undefined) labUpdateData.district = district;
         if (upazila !== undefined) labUpdateData.upazila = upazila;
@@ -651,13 +731,13 @@ export const updateLab = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: "Lab updated successfully",
+      message: 'Lab updated successfully',
       data: mappedLab,
     });
   } catch (error) {
-    console.error("❌ Error in updateLab:", error);
+    console.error('❌ Error in updateLab:', error);
     const errorObj: AppErrorPayload = {
-      fnc: "updateLab",
+      fnc: 'updateLab',
       error,
     };
     throw new AppError(errorObj);
@@ -669,14 +749,14 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
     const userAuth = req.user;
     const where: any = {};
 
-    if (userAuth?.role !== "SuperAdmin") {
-      if (userAuth?.role === "DistrictAdmin") {
+    if (userAuth?.role !== 'SuperAdmin') {
+      if (userAuth?.role === 'DistrictAdmin') {
         if (userAuth.district) where.district = { in: normalizeJurisdiction(userAuth.district) };
-      } else if (userAuth?.role === "DivisionAdmin") {
+      } else if (userAuth?.role === 'DivisionAdmin') {
         if (userAuth.division) where.division = { in: normalizeJurisdiction(userAuth.division) };
-      } else if (userAuth?.role === "LabAdmin") {
+      } else if (userAuth?.role === 'LabAdmin') {
         if (userAuth.email) {
-          where.email = { equals: userAuth.email, mode: "insensitive" };
+          where.email = { equals: userAuth.email, mode: 'insensitive' };
         } else {
           where.id = -1;
         }
@@ -712,30 +792,30 @@ export const getAllLabsUnified = async (req: AppRequest, res: Response) => {
     const unifiedLabs = [
       ...labs.map((l: any) => ({
         id: `lab-${l.id}`,
-        institute: l.institute || "",
-        division: l.division || "",
-        district: l.district || "",
-        upazila: l.upazila || "",
-        type: "SRD/SOF",
+        institute: l.institute || '',
+        division: l.division || '',
+        district: l.district || '',
+        upazila: l.upazila || '',
+        type: 'SRD/SOF',
       })),
       ...ictdlLabs.map((l: any) => ({
         id: `ictdl-${l.id}`,
-        institute: l.institute || "",
-        division: l.division || "",
-        district: l.district || "",
-        upazila: l.upazila || "",
-        type: "ICTDL",
+        institute: l.institute || '',
+        division: l.division || '',
+        district: l.district || '',
+        upazila: l.upazila || '',
+        type: 'ICTDL',
       })),
     ];
 
     return res.status(200).json({
       success: true,
-      message: "Unified labs retrieved successfully",
+      message: 'Unified labs retrieved successfully',
       data: unifiedLabs,
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "getAllLabsUnified",
+      fnc: 'getAllLabsUnified',
       error,
     };
     throw new AppError(errorObj);
@@ -767,29 +847,29 @@ export const getAllLabsUnifiedPublic = async (req: Request, res: Response) => {
     const unifiedLabs = [
       ...labs.map((l: any) => ({
         id: `lab-${l.id}`,
-        institute: l.institute || "",
-        division: l.division || "",
-        district: l.district || "",
-        upazila: l.upazila || "",
-        type: "SRD/SOF",
+        institute: l.institute || '',
+        division: l.division || '',
+        district: l.district || '',
+        upazila: l.upazila || '',
+        type: 'SRD/SOF',
       })),
       ...ictdlLabs.map((l: any) => ({
         id: `ictdl-${l.id}`,
-        institute: l.institute || "",
-        division: l.division || "",
-        district: l.district || "",
-        upazila: l.upazila || "",
-        type: "ICTDL",
+        institute: l.institute || '',
+        division: l.division || '',
+        district: l.district || '',
+        upazila: l.upazila || '',
+        type: 'ICTDL',
       })),
     ];
 
     return res.status(200).json({
       success: true,
-      message: "Public unified labs retrieved successfully",
+      message: 'Public unified labs retrieved successfully',
       data: unifiedLabs,
     });
   } catch (error) {
-    const errorObj: AppErrorPayload = { fnc: "getAllLabsUnifiedPublic", error };
+    const errorObj: AppErrorPayload = { fnc: 'getAllLabsUnifiedPublic', error };
     throw new AppError(errorObj);
   }
 };
@@ -801,7 +881,7 @@ export const bulkLabInsert = async (req: Request, res: Response) => {
     if (!Array.isArray(labs)) {
       return res.status(400).json({
         success: false,
-        message: "labs field must be an array",
+        message: 'labs field must be an array',
       });
     }
 
@@ -834,7 +914,7 @@ export const bulkLabInsert = async (req: Request, res: Response) => {
     });
   } catch (error) {
     const errorObj: AppErrorPayload = {
-      fnc: "bulkLabInsert",
+      fnc: 'bulkLabInsert',
       error,
     };
     throw new AppError(errorObj);

@@ -1,6 +1,6 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
-import config from "./env.config";
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import config from './env.config';
 
 const connectionString = `${config.database_url}`;
 
@@ -11,9 +11,9 @@ export const prisma = new PrismaClient({ adapter });
 export async function connectDatabase() {
   try {
     await prisma.$connect();
-    console.log("✅ Database connected successfully");
+    console.log('✅ Database connected successfully');
   } catch (error) {
-    console.error("❌ Database connection failed:", error);
+    console.error('❌ Database connection failed:', error);
     process.exit(1);
   }
 }

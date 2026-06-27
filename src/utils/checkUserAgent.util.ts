@@ -1,8 +1,8 @@
-import { Request } from "express";
-import { UAParser } from "ua-parser-js";
+import { Request } from 'express';
+import { UAParser } from 'ua-parser-js';
 
 function checkUserAgent(req: Request): boolean {
-  const userAgent = req.headers["user-agent"];
+  const userAgent = req.headers['user-agent'];
   if (!userAgent) return false;
 
   const parser = new UAParser(userAgent);
@@ -13,7 +13,7 @@ function checkUserAgent(req: Request): boolean {
 
   const isBrowser =
     browserName !== undefined &&
-    ["chrome", "firefox", "safari", "edge", "opera"].includes(browserName) &&
+    ['chrome', 'firefox', 'safari', 'edge', 'opera'].includes(browserName) &&
     !deviceType;
 
   return isBrowser;

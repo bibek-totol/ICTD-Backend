@@ -1,24 +1,24 @@
-import dotenv from "dotenv";
-import path from "path";
+import dotenv from 'dotenv';
+import path from 'path';
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
 }
 
 if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is missing in .env");
+  throw new Error('JWT_SECRET is missing in .env');
 }
 
 function checkAddUserSupport() {
-  return process.env.ADD_USER_SUPPORT === "true" ||
-    process.env.ADD_USER_SUPPORT === "TRUE" ||
-    process.env.ADD_USER_SUPPORT === "yes" ||
-    process.env.ADD_USER_SUPPORT === "YES" ||
-    process.env.ADD_USER_SUPPORT === "1" ||
-    process.env.ADD_USER_SUPPORT === "on" ||
-    process.env.ADD_USER_SUPPORT === "ON" ||
-    process.env.ADD_USER_SUPPORT === "0N" ||
-    process.env.ADD_USER_SUPPORT === "0n"
+  return process.env.ADD_USER_SUPPORT === 'true' ||
+    process.env.ADD_USER_SUPPORT === 'TRUE' ||
+    process.env.ADD_USER_SUPPORT === 'yes' ||
+    process.env.ADD_USER_SUPPORT === 'YES' ||
+    process.env.ADD_USER_SUPPORT === '1' ||
+    process.env.ADD_USER_SUPPORT === 'on' ||
+    process.env.ADD_USER_SUPPORT === 'ON' ||
+    process.env.ADD_USER_SUPPORT === '0N' ||
+    process.env.ADD_USER_SUPPORT === '0n'
     ? true
     : false;
 }
@@ -30,10 +30,10 @@ const config = {
   node_env: process.env.NODE_ENV as string,
   jwt_secret: process.env.JWT_SECRET as string,
   /** Access token expiry (e.g. "5h", "7d"). User must re-login after this. */
-  jwt_expires_in: (process.env.JWT_EXPIRES_IN as string) || "5h",
+  jwt_expires_in: (process.env.JWT_EXPIRES_IN as string) || '5h',
   add_user_support: checkAddUserSupport(),
   email_verification_expiry: Number(process.env.EMAIL_VERIFICATION_EXPIRY),
-  
+
   cloudinary: {
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
     api_key: process.env.CLOUDINARY_API_KEY as string,

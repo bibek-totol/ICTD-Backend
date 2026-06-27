@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from '@prisma/client';
 
 // const payLoad = {
 //   id: user.id,
@@ -6,6 +6,6 @@ import { Role } from "@prisma/client";
 // };
 
 export interface CookiesAuthPayLoad {
-  id: String;
+  id: string;
   role?: Role;
 }
