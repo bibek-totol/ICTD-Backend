@@ -15,6 +15,7 @@ import NoticeRouter from './routes/notice.routes';
 import VendorRouter from './routes/vendor.routes';
 import ContactMessageRouter from './routes/contactMessage.routes';
 import FileRouter from './routes/file.routes';
+import DataRouter from './routes/data.routes';
 // import authenticateMiddleware from "./middlewares/auth.m";
 import { requestLogger } from './middlewares/logger.m';
 import { errorHandler } from './middlewares/errorHandler.m';
@@ -84,6 +85,7 @@ app.use('/api/v1/notices', NoticeRouter);
 app.use('/api/v1/vendors', VendorRouter);
 app.use('/api/v1/contact-messages', ContactMessageRouter);
 app.use('/api/v1/files', FileRouter);
+app.use('/api/v1/data', DataRouter);
 
 app.use(errorHandler);
 
