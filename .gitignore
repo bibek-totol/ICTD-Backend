@@ -1,6 +1,5 @@
 node_modules
 # Keep environment variables out of version control
-.env
 
 logs
 
@@ -12,3 +11,4 @@ dist
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+config.bat
